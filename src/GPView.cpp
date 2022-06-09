@@ -1676,6 +1676,11 @@ int main(int argc, char *argv[])
 	// Create Flat Triangle Data Structure
 	CreateFlatTriangleData();
 
+		// PerformBooleanOperation();
+		// glParam->voxelCount = 100;
+		for (int i = 0; i < objects.size(); i++)
+			if (objects[i]->voxelData == NULL)
+				objects[i]->PerformVoxelization(glParam, -1);
 // #ifdef SAVESTL
 // 	// Save as STL Files
 // 	for (int i = 0; i < objects.size(); i++)
