@@ -41,6 +41,10 @@ For more details visit [IDEALab](http://web.me.iastate.edu/idealab/index.html) w
 
 Setup instructions for Windows and Linux can be found on wiki page.
 
+### Exectute GPView
+
+e.g. execute from build directory ./GPView ../files/cessna.obj deltaX 5.0 deltaY 2.5 deltaZ 5.5
+
 ## Guidelines
 
 Guidelines to voxelize CAD models using GPView can be found on the wiki page.

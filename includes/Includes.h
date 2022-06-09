@@ -155,3 +155,7 @@
 #define INOUTDFORMAT GL_FLOAT
 typedef GLfloat inOutDType;
 using namespace std;
+
+#define SAVESTL
+
+#define VISUALDEBUG

@@ -2947,13 +2947,13 @@ void Object::SaveVoxelization(GLParameters* glParam)
 
 	// Make Individual Files for each Normal Value
 	ofstream voxelConfigFile;
-	ofstream level1NormalFile;
+	//ofstream level1NormalFile;
 	ofstream level1InOutFile;
 
 	// Level 2 Files
-	ofstream level1BoundaryPrefixSumFile;
+	//ofstream level1BoundaryPrefixSumFile;
 	ofstream level2InOutFile;
-	ofstream level2NormalFile;
+	//ofstream level2NormalFile;
 
 	string fileNamePrefix;
 	fileNamePrefix.append("Obj");
@@ -2961,28 +2961,28 @@ void Object::SaveVoxelization(GLParameters* glParam)
 
 	string voxelConfigFileName = fileNamePrefix + "VoxelConfig.txt";
 	string level1InOutFileName = fileNamePrefix + "Level1InOut.raw";
-	string level1NormalFileName = fileNamePrefix + "Level1Normal.raw";
+	//string level1NormalFileName = fileNamePrefix + "Level1Normal.raw";
 
 	voxelConfigFile.open(voxelConfigFileName);
 	level1InOutFile.open(level1InOutFileName, std::ofstream::binary);
-	level1NormalFile.open(level1NormalFileName, std::ofstream::binary);
+	//level1NormalFile.open(level1NormalFileName, std::ofstream::binary);
 
 	if (glParam->level2Voxels)
 	{
-		string level1BoundaryPrefixSumFileName = fileNamePrefix + "Level1BoundaryPrefixSum.raw";
+		//string level1BoundaryPrefixSumFileName = fileNamePrefix + "Level1BoundaryPrefixSum.raw";
 		string level2InOutFileName = fileNamePrefix + "Level2InOut.raw";
-		string level2NormalFileName = fileNamePrefix + "Level2Normal.raw";
+		//string level2NormalFileName = fileNamePrefix + "Level2Normal.raw";
 
-		level1BoundaryPrefixSumFile.open(level1BoundaryPrefixSumFileName, std::ofstream::binary);
+		//level1BoundaryPrefixSumFile.open(level1BoundaryPrefixSumFileName, std::ofstream::binary);
 		level2InOutFile.open(level2InOutFileName, std::ofstream::binary);
-		level2NormalFile.open(level2NormalFileName, std::ofstream::binary);
+		//level2NormalFile.open(level2NormalFileName, std::ofstream::binary);
 	}
 
 	bool fileOpenError = false;
-	if (!voxelConfigFile.good() || !level1InOutFile.good() || !level1NormalFile.good())
+	if (!voxelConfigFile.good() || !level1InOutFile.good() /* || !level1NormalFile.good() */)
 		fileOpenError = true;
 	if (glParam->level2Voxels)
-	if (!level1BoundaryPrefixSumFile.good() || !level2InOutFile.good() || !level2NormalFile.good())
+	if (/* !level1BoundaryPrefixSumFile.good() || */ !level2InOutFile.good() /* || !level2NormalFile.good() */)
 		fileOpenError = true;
 
 	if (fileOpenError)
@@ -3024,53 +3024,53 @@ void Object::SaveVoxelization(GLParameters* glParam)
 	voxelConfigFile.close();
 
 	outputDType* level1InOutData = new outputDType[numLevel1Voxels];
-	outputDType* level1NormalData = new outputDType[numLevel1Voxels * 3];
+	//outputDType* level1NormalData = new outputDType[numLevel1Voxels * 3];
 
 	for (int k = 0; k < numLevel1Voxels; k++)
 	{
 		level1InOutData[k] = outputDType(this->voxelData->level1InOut[k] * inOutScale); // Outside = 0, surface = 127.0, inside = 255.0
-		level1NormalData[k * 3 + 0] = outputDType(this->voxelData->level1Normal[k * 3 + 0] * normScale + normBias);
-		level1NormalData[k * 3 + 1] = outputDType(this->voxelData->level1Normal[k * 3 + 1] * normScale + normBias);
-		level1NormalData[k * 3 + 2] = outputDType(this->voxelData->level1Normal[k * 3 + 2] * normScale + normBias);
+		//level1NormalData[k * 3 + 0] = outputDType(this->voxelData->level1Normal[k * 3 + 0] * normScale + normBias);
+		//level1NormalData[k * 3 + 1] = outputDType(this->voxelData->level1Normal[k * 3 + 1] * normScale + normBias);
+		//level1NormalData[k * 3 + 2] = outputDType(this->voxelData->level1Normal[k * 3 + 2] * normScale + normBias);
 	}
 
 	// Add level 2
 	outputDType* level2InOutData;
-	outputDType* level2NormalData;
+	//outputDType* level2NormalData;
 	if (glParam->level2Voxels)
 	{
 		level2InOutData = new outputDType[numLevel1BoundaryVoxels * numLevel2Voxels];
-		level2NormalData = new outputDType[numLevel1BoundaryVoxels * numLevel2Voxels * 3];
+		//level2NormalData = new outputDType[numLevel1BoundaryVoxels * numLevel2Voxels * 3];
 		for (int h = 0; h < numLevel1BoundaryVoxels * numLevel2Voxels; h++)
 		{
 			level2InOutData[h] = outputDType(this->voxelData->level2InOut[h] * inOutScale);
-			level2NormalData[h * 3 + 0] = outputDType(this->voxelData->level2Normal[h * 4 + 0] * normScale + normBias);
-			level2NormalData[h * 3 + 1] = outputDType(this->voxelData->level2Normal[h * 4 + 1] * normScale + normBias);
-			level2NormalData[h * 3 + 2] = outputDType(this->voxelData->level2Normal[h * 4 + 2] * normScale + normBias);
+			//level2NormalData[h * 3 + 0] = outputDType(this->voxelData->level2Normal[h * 4 + 0] * normScale + normBias);
+			//level2NormalData[h * 3 + 1] = outputDType(this->voxelData->level2Normal[h * 4 + 1] * normScale + normBias);
+			//level2NormalData[h * 3 + 2] = outputDType(this->voxelData->level2Normal[h * 4 + 2] * normScale + normBias);
 		}
 	}
 
 	// Write Level 1 data into respective files
 	level1InOutFile.write((char*)level1InOutData, numLevel1Voxels*sizeof(outputDType));
 	delete[] level1InOutData;
-	level1NormalFile.write((char*)level1NormalData, numLevel1Voxels * 3 * sizeof(outputDType));
-	delete[] level1NormalData;
+	//level1NormalFile.write((char*)level1NormalData, numLevel1Voxels * 3 * sizeof(outputDType));
+	//delete[] level1NormalData;
 
 	// Write Level 2 data into respective files
 	if (glParam->level2Voxels)
 	{
-		level1BoundaryPrefixSumFile.write(reinterpret_cast<const char *>(this->voxelData->boundaryPrefixSum), numLevel1Voxels * sizeof(int));
+		//level1BoundaryPrefixSumFile.write(reinterpret_cast<const char *>(this->voxelData->boundaryPrefixSum), numLevel1Voxels * sizeof(int));
 		level2InOutFile.write((char*)level2InOutData, numLevel1BoundaryVoxels * numLevel2Voxels * sizeof(outputDType));
-		level2NormalFile.write((char*)level2NormalData, numLevel1BoundaryVoxels * numLevel2Voxels * 3 * sizeof(outputDType));
+		//level2NormalFile.write((char*)level2NormalData, numLevel1BoundaryVoxels * numLevel2Voxels * 3 * sizeof(outputDType));
 		delete[] level2InOutData;
-		delete[] level2NormalData;
-		level1BoundaryPrefixSumFile.close();
+		//delete[] level2NormalData;
+		//level1BoundaryPrefixSumFile.close();
 		level2InOutFile.close();
-		level2NormalFile.close();
+		//level2NormalFile.close();
 	}
 
 	level1InOutFile.close();
-	level1NormalFile.close();
+	//level1NormalFile.close();
 
 }
 
@@ -3095,9 +3095,13 @@ void Object::PerformVoxelization(GLParameters* glParam, int bufferSize)
 	//	this->voxelData->numDivX = GetNextPower2(int((this->bBoxMax[0] - this->bBoxMin[0])/nominalGridSize));
 	//	this->voxelData->numDivY = GetNextPower2(int((this->bBoxMax[1] - this->bBoxMin[1])/nominalGridSize));
 	//	this->voxelData->numDivZ = GetNextPower2(int((this->bBoxMax[2] - this->bBoxMin[2])/nominalGridSize));
-	this->voxelData->numDivX = (int((this->bBoxMax[0] - this->bBoxMin[0]) / nominalGridSize));
-	this->voxelData->numDivY = (int((this->bBoxMax[1] - this->bBoxMin[1]) / nominalGridSize));
-	this->voxelData->numDivZ = (int((this->bBoxMax[2] - this->bBoxMin[2]) / nominalGridSize));
+	// this->voxelData->numDivX = (int((this->bBoxMax[0] - this->bBoxMin[0]) / nominalGridSize));
+	// this->voxelData->numDivY = (int((this->bBoxMax[1] - this->bBoxMin[1]) / nominalGridSize));
+	// this->voxelData->numDivZ = (int((this->bBoxMax[2] - this->bBoxMin[2]) / nominalGridSize));
+	this->voxelData->numDivX = (int((this->bBoxMax[0] - this->bBoxMin[0]) / this->deltaX));
+	this->voxelData->numDivY = (int((this->bBoxMax[1] - this->bBoxMin[1]) / this->deltaY));
+	this->voxelData->numDivZ = (int((this->bBoxMax[2] - this->bBoxMin[2]) / this->deltaZ));
+	std::cout<<"deltax is "<<deltaX<<"\t"<<"deltay is "<<deltaY<<"\t"<<"deltaz is "<<deltaZ<<"\t";
 	if (this->voxelData->numDivX == 0) this->voxelData->numDivX++;
 	if (this->voxelData->numDivY == 0) this->voxelData->numDivY++;
 	if (this->voxelData->numDivZ == 0) this->voxelData->numDivZ++;
@@ -3134,15 +3138,15 @@ void Object::PerformVoxelization(GLParameters* glParam, int bufferSize)
 		numDivZ2 = this->voxelData->numDivZ2;
 		cout << "Level 2 Resolution     : " << numDivX2 << " x " << numDivY2 << " x " << numDivZ2 << endl;
 	}
-	cout << "Grid Size Level 1      : " << gridSizeX << endl;
-	cout << "Grid Size Level 1      : " << gridSizeY << endl;
-	cout << "Grid Size Level 1      : " << gridSizeZ << endl;
+	cout << "Grid SizeX Level 1      : " << gridSizeX << endl;
+	cout << "Grid SizeY Level 1      : " << gridSizeY << endl;
+	cout << "Grid SizeZ Level 1      : " << gridSizeZ << endl;
 
 	if (glParam->level2Voxels)
 	{
-		cout << "Grid Size Level 2      : " << this->voxelData->gridSizeX2 << endl;
-		cout << "Grid Size Level 2      : " << this->voxelData->gridSizeY2 << endl;
-		cout << "Grid Size Level 2      : " << this->voxelData->gridSizeZ2 << endl;
+		cout << "Grid SizeX Level 2      : " << this->voxelData->gridSizeX2 << endl;
+		cout << "Grid SizeY Level 2      : " << this->voxelData->gridSizeY2 << endl;
+		cout << "Grid SizeZ Level 2      : " << this->voxelData->gridSizeZ2 << endl;
 	}
 
 	// Initialize 3D array of points to be classified
