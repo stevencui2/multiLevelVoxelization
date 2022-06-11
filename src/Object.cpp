@@ -2951,7 +2951,7 @@ void Object::SaveVoxelization(GLParameters* glParam)
 	ofstream level1InOutFile;
 
 	// Level 2 Files
-	//ofstream level1BoundaryPrefixSumFile;
+	ofstream level1BoundaryPrefixSumFile;
 	ofstream level2InOutFile;
 	//ofstream level2NormalFile;
 
@@ -2969,11 +2969,11 @@ void Object::SaveVoxelization(GLParameters* glParam)
 
 	if (glParam->level2Voxels)
 	{
-		//string level1BoundaryPrefixSumFileName = fileNamePrefix + "Level1BoundaryPrefixSum.raw";
+		string level1BoundaryPrefixSumFileName = fileNamePrefix + "Level1BoundaryPrefixSum.raw";
 		string level2InOutFileName = fileNamePrefix + "Level2InOut.raw";
 		//string level2NormalFileName = fileNamePrefix + "Level2Normal.raw";
 
-		//level1BoundaryPrefixSumFile.open(level1BoundaryPrefixSumFileName, std::ofstream::binary);
+		level1BoundaryPrefixSumFile.open(level1BoundaryPrefixSumFileName, std::ofstream::binary);
 		level2InOutFile.open(level2InOutFileName, std::ofstream::binary);
 		//level2NormalFile.open(level2NormalFileName, std::ofstream::binary);
 	}
@@ -2982,7 +2982,7 @@ void Object::SaveVoxelization(GLParameters* glParam)
 	if (!voxelConfigFile.good() || !level1InOutFile.good() /* || !level1NormalFile.good() */)
 		fileOpenError = true;
 	if (glParam->level2Voxels)
-	if (/* !level1BoundaryPrefixSumFile.good() || */ !level2InOutFile.good() /* || !level2NormalFile.good() */)
+	if (!level1BoundaryPrefixSumFile.good() || !level2InOutFile.good() /* || !level2NormalFile.good() */)
 		fileOpenError = true;
 
 	if (fileOpenError)
@@ -3059,12 +3059,12 @@ void Object::SaveVoxelization(GLParameters* glParam)
 	// Write Level 2 data into respective files
 	if (glParam->level2Voxels)
 	{
-		//level1BoundaryPrefixSumFile.write(reinterpret_cast<const char *>(this->voxelData->boundaryPrefixSum), numLevel1Voxels * sizeof(int));
+		level1BoundaryPrefixSumFile.write(reinterpret_cast<const char *>(this->voxelData->boundaryPrefixSum), numLevel1Voxels * sizeof(int));
 		level2InOutFile.write((char*)level2InOutData, numLevel1BoundaryVoxels * numLevel2Voxels * sizeof(outputDType));
 		//level2NormalFile.write((char*)level2NormalData, numLevel1BoundaryVoxels * numLevel2Voxels * 3 * sizeof(outputDType));
 		delete[] level2InOutData;
 		//delete[] level2NormalData;
-		//level1BoundaryPrefixSumFile.close();
+		level1BoundaryPrefixSumFile.close();
 		level2InOutFile.close();
 		//level2NormalFile.close();
 	}
