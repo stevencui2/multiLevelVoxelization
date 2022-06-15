@@ -102,6 +102,10 @@ public:
 
 	float* flatCPUTriangleData;					// flat triangle coordinate data for GPU algorithms
 
+	double deltaX{};
+	double deltaY{};
+	double deltaZ{};
+
 	Object &operator=(const Object &that);
 	void ReadObject(char *fname);
 	void ReadObject2(char *fname);
@@ -133,6 +137,7 @@ public:
 	void DrawInOutPoints(GLParameters*);
 	void PerformVoxelization(GLParameters*, int);
 	void SaveVoxelization(GLParameters*);
+	void SaveVoxelizationVTK();
 	void SaveInOutData(GLParameters*);
 	void CreateVoxelStripDisplayLists(GLParameters* glParam);
 

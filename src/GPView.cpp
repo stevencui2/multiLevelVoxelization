@@ -1,32 +1,32 @@
 /**
-* MIT License
-*
-* Copyright(c) 2018 Iowa State University (ISU) and ISU IDEALab
-*
-* Permission is hereby granted, free of charge, to any person obtaining a copy
-* of this software and associated documentation files(the "Software"), to deal
-* in the Software without restriction, including without limitation the rights
-* to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
-* copies of the Software, and to permit persons to whom the Software is
-* furnished to do so, subject to the following conditions :
-*
-* The above copyright notice and this permission notice shall be included in all
-* copies or substantial portions of the Software.
-*
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
-* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-* SOFTWARE.
-*/
+ * MIT License
+ *
+ * Copyright(c) 2018 Iowa State University (ISU) and ISU IDEALab
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files(the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions :
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 
 #include "../includes/Object.h"
 #include "../includes/GPUUtilities.h"
 #include "../includes/CUDAUtilities.h"
 
-//Resolution
+// Resolution
 int intRes = 64;
 int silRes = 300;
 bool selfInt = false;
@@ -40,23 +40,22 @@ int voxelization_times;
 
 // Fixed view
 bool fixedView = false;
-float fixedViewMatrix[16] = { 0.97453058,
--0.46680558,
-1.1623085,
-0,
-1.2426617,
-0.54494876,
--0.82304496,
-0,
--0.1570241,
-1.4155214,
-0.70015824,
-0,
-98.893898,
--208.47809,
-3.1728468,
-1 };
-
+float fixedViewMatrix[16] = {0.97453058,
+							 -0.46680558,
+							 1.1623085,
+							 0,
+							 1.2426617,
+							 0.54494876,
+							 -0.82304496,
+							 0,
+							 -0.1570241,
+							 1.4155214,
+							 0.70015824,
+							 0,
+							 98.893898,
+							 -208.47809,
+							 3.1728468,
+							 1};
 
 // View Variables
 vector<Light> lights;
@@ -84,14 +83,14 @@ int selectedObject = 0;
 int numDispPoints = 0;
 
 float silhouetteArrowFactor = 0.7;
-Float3 silhouettePoint = Float3(0, modelSize*silhouetteArrowFactor, 0);
+Float3 silhouettePoint = Float3(0, modelSize *silhouetteArrowFactor, 0);
 Float3 silhouetteVector = Float3(0, -1, 0);
-//CG and GL variables
-GLParameters* glParam;
+// CG and GL variables
+GLParameters *glParam;
 
-//Timer timer;
-//Timer timerNR;
-//Timer timerBB;
+// Timer timer;
+// Timer timerNR;
+// Timer timerBB;
 
 int numRuns = 0;
 float evaluationTime;
@@ -99,7 +98,7 @@ float closestPointTimeNR;
 float closestPointTimeBB;
 
 // Entities Global Variable
-vector<Object*> objects;
+vector<Object *> objects;
 vector<Float3> points;
 
 GLuint pointsDLid;
@@ -117,7 +116,7 @@ float clipPlaneDistZ = -1.7;
 int selectedObject1 = 1;
 int selectedObject2 = 0;
 
-void ReadPoints(char* fname)
+void ReadPoints(char *fname)
 {
 	ifstream in(fname, ios::in);
 	if (!in.good())
@@ -157,7 +156,7 @@ void ParseInputFile(char const *fname)
 	in >> numLights;
 	lights.resize(numLights);
 
-	for (i = 0; i<numLights; i++)
+	for (i = 0; i < numLights; i++)
 	{
 		in >> lights[i].ambient[0] >> lights[i].ambient[1] >> lights[i].ambient[2] >>
 			lights[i].ambient[3];
@@ -170,19 +169,19 @@ void ParseInputFile(char const *fname)
 	}
 }
 
-void ReadOBJFile(char* fName, int dlID)
+void ReadOBJFile(char *fName, int dlID, double deltaX, double deltaY, double deltaZ)
 {
-	Object* tempObject = new Object();
+	Object *tempObject = new Object();
 	bool randomObjColor = false;
 
-	Face* face = new Face();
+	Face *face = new Face();
 	face->dlid = dlID;
 	face->trimmed = false;
 	tempObject->objID = dlID - 3;
 
 	Float3 tempFaceColor = Float3(0.768628, 0.462745, 0.137255);
 	if (randomObjColor)
-		tempFaceColor = Float3(rand() / (RAND_MAX*1.0), rand() / (RAND_MAX*1.0), rand() / (RAND_MAX*1.0));
+		tempFaceColor = Float3(rand() / (RAND_MAX * 1.0), rand() / (RAND_MAX * 1.0), rand() / (RAND_MAX * 1.0));
 	face->kdColor = Float3(tempFaceColor[0], tempFaceColor[1], tempFaceColor[2]);
 	face->ksColor = Float3(tempFaceColor[0] * 0.25, tempFaceColor[1] * 0.25, tempFaceColor[2] * 0.25);
 
@@ -191,6 +190,9 @@ void ReadOBJFile(char* fName, int dlID)
 	face->surfID = 0;
 	tempObject->faces.push_back(face);
 	tempObject->ReadObject(fName);
+	tempObject->deltaX=deltaX;
+	tempObject->deltaY=deltaY;
+	tempObject->deltaZ=deltaZ;
 
 	float currentModelSize = Distance(tempObject->bBoxMax, tempObject->bBoxMin) / 8.0;
 	modelSize = currentModelSize;
@@ -201,18 +203,18 @@ void ReadOBJFile(char* fName, int dlID)
 	objects.push_back(tempObject);
 }
 
-void ReadOFFFile(char* fName, int dlID)
+void ReadOFFFile(char *fName, int dlID)
 {
-	Object* tempObject = new Object();
+	Object *tempObject = new Object();
 	bool randomObjColor = false;
 
-	Face* face = new Face();
+	Face *face = new Face();
 	face->dlid = dlID;
 	face->trimmed = false;
 
 	Float3 tempFaceColor = Float3(0.768628, 0.462745, 0.137255);
 	if (randomObjColor)
-		tempFaceColor = Float3(rand() / (RAND_MAX*1.0), rand() / (RAND_MAX*1.0), rand() / (RAND_MAX*1.0));
+		tempFaceColor = Float3(rand() / (RAND_MAX * 1.0), rand() / (RAND_MAX * 1.0), rand() / (RAND_MAX * 1.0));
 	face->kdColor = Float3(tempFaceColor[0], tempFaceColor[1], tempFaceColor[2]);
 	face->ksColor = Float3(tempFaceColor[0] * 0.25, tempFaceColor[1] * 0.25, tempFaceColor[2] * 0.25);
 
@@ -231,9 +233,9 @@ void ReadOFFFile(char* fName, int dlID)
 	objects.push_back(tempObject);
 }
 
-void ReadRAWFile(char* fName, int dlID)
+void ReadRAWFile(char *fName, int dlID)
 {
-	Object* tempObject = new Object();
+	Object *tempObject = new Object();
 	tempObject->bBoxMax = Float3(3.990815, 52.696899, -8.802678);
 	tempObject->bBoxMin = Float3(-5.166523, 40.273825, -21.6738);
 	tempObject->ReadRAWObject(fName);
@@ -262,12 +264,12 @@ void DrawPoints()
 
 	glEnable(GL_COLOR_MATERIAL);
 	glPointSize(8.0);
-	glBegin(GL_POINTS);    // Specify point drawing
+	glBegin(GL_POINTS); // Specify point drawing
 
 	for (int i = 0; i < ___min(numDispPoints, points.size()); i++)
 	{
 		if (randomColor)
-			glColor3f(rand() / (RAND_MAX*1.0), rand() / (RAND_MAX*1.0), rand() / (RAND_MAX*1.0));
+			glColor3f(rand() / (RAND_MAX * 1.0), rand() / (RAND_MAX * 1.0), rand() / (RAND_MAX * 1.0));
 		glVertex3f(points[i][0], points[i][1], points[i][2]);
 	}
 	glEnd();
@@ -287,24 +289,24 @@ void InitGLEW(void)
 	if (!GLEW_EXT_framebuffer_object)
 	{
 		fprintf(stderr, "EXT_framebuffer_object is not supported!\n\n");
-		//exit(EXIT_FAILURE);
+		// exit(EXIT_FAILURE);
 	}
 	else if (!GLEW_ARB_occlusion_query)
 	{
 		fprintf(stderr, "Occlusion Query is not supported!\n\n");
-		//exit(EXIT_FAILURE);
+		// exit(EXIT_FAILURE);
 	}
 }
 
 void InitGL(void)
 {
 	// setup camera info
-	camera.nearcp = -50 * modelSize*max(viewport.h / 2.0, viewport.w / 2.0) / 100.0;
-	camera.farcp = 50 * modelSize*max(viewport.h / 2.0, viewport.w / 2.0) / 100.0;
-	camera.leftcp = -modelSize*viewport.w / 200.0;
-	camera.rightcp = modelSize*viewport.w / 200.0;
-	camera.bottomcp = -modelSize*viewport.h / 200.0;
-	camera.topcp = modelSize*viewport.h / 200.0;
+	camera.nearcp = -50 * modelSize * max(viewport.h / 2.0, viewport.w / 2.0) / 100.0;
+	camera.farcp = 50 * modelSize * max(viewport.h / 2.0, viewport.w / 2.0) / 100.0;
+	camera.leftcp = -modelSize * viewport.w / 200.0;
+	camera.rightcp = modelSize * viewport.w / 200.0;
+	camera.bottomcp = -modelSize * viewport.h / 200.0;
+	camera.topcp = modelSize * viewport.h / 200.0;
 
 	camera.fov = 30;
 	camera.eye = Float3(0, 0, 1);
@@ -330,7 +332,7 @@ void InitGL(void)
 
 #ifdef DISPLAYLISTS
 	// Generate Display Lists
-	for (int i = 0; i<objects.size(); i++)
+	for (int i = 0; i < objects.size(); i++)
 		objects[i]->CreateDisplayLists(glParam);
 
 	pointsDLid = glGenLists(1);
@@ -346,12 +348,12 @@ void ReSize(int w, int h)
 	viewport.w = w;
 	viewport.h = h;
 
-	camera.nearcp = -50 * modelSize*max(viewport.h / 2.0, viewport.w / 2.0) / 100.0;
-	camera.farcp = 50 * modelSize*max(viewport.h / 2.0, viewport.w / 2.0) / 100.0;
-	camera.leftcp = -modelSize*viewport.w / 200.0;
-	camera.rightcp = modelSize*viewport.w / 200.0;
-	camera.bottomcp = -modelSize*viewport.h / 200.0;
-	camera.topcp = modelSize*viewport.h / 200.0;
+	camera.nearcp = -50 * modelSize * max(viewport.h / 2.0, viewport.w / 2.0) / 100.0;
+	camera.farcp = 50 * modelSize * max(viewport.h / 2.0, viewport.w / 2.0) / 100.0;
+	camera.leftcp = -modelSize * viewport.w / 200.0;
+	camera.rightcp = modelSize * viewport.w / 200.0;
+	camera.bottomcp = -modelSize * viewport.h / 200.0;
+	camera.topcp = modelSize * viewport.h / 200.0;
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
@@ -361,9 +363,9 @@ void ReSize(int w, int h)
 
 void DrawSilhouetteDirection()
 {
-	float cylHeight = modelSize*.1;
+	float cylHeight = modelSize * .1;
 	float cylWidth = cylHeight / 10.0;
-	Float3 endPoint = silhouetteVector*cylHeight;
+	Float3 endPoint = silhouetteVector * cylHeight;
 	endPoint = endPoint + silhouettePoint;
 
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
@@ -374,23 +376,23 @@ void DrawSilhouetteDirection()
 	glPushMatrix();
 	glTranslated(silhouettePoint[0], silhouettePoint[1], silhouettePoint[2]);
 	glScalef(2, 2, 2);
-	GLUquadricObj* quadric = gluNewQuadric();
+	GLUquadricObj *quadric = gluNewQuadric();
 
 	Float3 basePerp1 = GetPerpendicular(silhouetteVector);
 	Float3 basePerp2 = VectorCrossProduct(silhouetteVector, basePerp1);
 	VectorNormalize(basePerp2);
 
-	double localMatrix[] = { basePerp1[0], basePerp1[1], basePerp1[2], 0,
-		basePerp2[0], basePerp2[1], basePerp2[2], 0,
-		silhouetteVector[0], silhouetteVector[1], silhouetteVector[2], 0,
-		0, 0, 0, 1 };
+	double localMatrix[] = {basePerp1[0], basePerp1[1], basePerp1[2], 0,
+							basePerp2[0], basePerp2[1], basePerp2[2], 0,
+							silhouetteVector[0], silhouetteVector[1], silhouetteVector[2], 0,
+							0, 0, 0, 1};
 	glMultMatrixd(localMatrix);
 	gluCylinder(quadric, 2 * cylWidth, 0, 4 * cylWidth, 20, 3);
 	gluDisk(quadric, 0, 2 * cylWidth, 20, 1);
-	double localMatrix2[] = { 0, 1, 0, 0,
-		1, 0, 0, 0,
-		0, 0, -1, 0,
-		0, 0, 0, 1 };
+	double localMatrix2[] = {0, 1, 0, 0,
+							 1, 0, 0, 0,
+							 0, 0, -1, 0,
+							 0, 0, 0, 1};
 	glMultMatrixd(localMatrix2);
 	gluCylinder(quadric, cylWidth, cylWidth, cylHeight, 20, 3);
 	glTranslated(0, 0, cylHeight);
@@ -421,12 +423,12 @@ void DrawReflection()
 	glPopMatrix();
 
 	// Now, only render where stencil is set to 1
-	glStencilFunc(GL_EQUAL, 1, 0xffffffff);  // draw if stencil == 1
+	glStencilFunc(GL_EQUAL, 1, 0xffffffff); // draw if stencil == 1
 	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 
 	if (clipping)
 	{
-		double equation[4] = { 0, 0, -1, clipPlaneDistZ };
+		double equation[4] = {0, 0, -1, clipPlaneDistZ};
 		glClipPlane(GL_CLIP_PLANE0, equation);
 		glEnable(GL_CLIP_PLANE0);
 	}
@@ -439,10 +441,10 @@ void DrawReflection()
 	else if (reflectionPlane == 3)
 		glScalef(-1.0, 1.0, 1.0);
 
-	for (int i = 0; i<lights.size(); i++)
+	for (int i = 0; i < lights.size(); i++)
 		lights[i].Apply();
 
-	for (int i = 0; i<objects.size(); i++)
+	for (int i = 0; i < objects.size(); i++)
 		objects[i]->DrawSceneObject(glParam, false, 1.0);
 
 	glPopMatrix();
@@ -471,7 +473,7 @@ void ClipObjects(double equation[4], GLuint clipPlaneID)
 	//	glStencilOpSeparate(GL_BACK, GL_KEEP, GL_KEEP, GL_INCR);
 	glStencilOp(GL_KEEP, GL_KEEP, GL_INVERT);
 
-	for (int i = 0; i<objects.size(); i++)
+	for (int i = 0; i < objects.size(); i++)
 		objects[i]->DrawSceneObject(glParam, false, 1.0);
 
 	glDisable(clipPlaneID);
@@ -491,13 +493,12 @@ void ClipObjects(double equation[4], GLuint clipPlaneID)
 	//	glEnable(clipPlaneID);
 }
 
-
 void ClipQuarterObject()
 {
-	double equation0[4] = { -1, 0, 0, 0 };
-	double equation1[4] = { 1, 0, 0, 0 };
-	double equation2[4] = { 0, 0, -1, 0 };
-	double equation3[4] = { 0, 0, 1, 0 };
+	double equation0[4] = {-1, 0, 0, 0};
+	double equation1[4] = {1, 0, 0, 0};
+	double equation2[4] = {0, 0, -1, 0};
+	double equation3[4] = {0, 0, 1, 0};
 
 	glPushMatrix();
 	glTranslated(clipPlaneDistX, 0, 0);
@@ -528,7 +529,7 @@ void ClipQuarterObject()
 	glEnable(GL_CLIP_PLANE0);
 	glEnable(GL_CLIP_PLANE2);
 
-	for (int i = 0; i<objects.size(); i++)
+	for (int i = 0; i < objects.size(); i++)
 		objects[i]->DrawSceneObject(glParam, false, 1.0);
 
 	glDisable(GL_CLIP_PLANE0);
@@ -537,7 +538,7 @@ void ClipQuarterObject()
 	glEnable(GL_CLIP_PLANE0);
 	glEnable(GL_CLIP_PLANE3);
 
-	for (int i = 0; i<objects.size(); i++)
+	for (int i = 0; i < objects.size(); i++)
 		objects[i]->DrawSceneObject(glParam, false, 1.0);
 
 	glDisable(GL_CLIP_PLANE0);
@@ -546,7 +547,7 @@ void ClipQuarterObject()
 	glEnable(GL_CLIP_PLANE1);
 	glEnable(GL_CLIP_PLANE2);
 
-	for (int i = 0; i<objects.size(); i++)
+	for (int i = 0; i < objects.size(); i++)
 		objects[i]->DrawSceneObject(glParam, false, 1.0);
 
 	glDisable(GL_CLIP_PLANE1);
@@ -557,9 +558,9 @@ void ClipQuarterObject()
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 	glColor3f(.5, .4, 0);
 	float objKA2 = objKA * 0.5;
-	GLfloat mat_ambient[] = { objKA2, objKA2, 0.0, 1.0 };
-	GLfloat mat_diffuse[] = { 0.5, 0.4, 0.0, 1.0 };
-	GLfloat mat_specular[] = { 0.5, 0.4, 0.0, 1.0 };
+	GLfloat mat_ambient[] = {objKA2, objKA2, 0.0, 1.0};
+	GLfloat mat_diffuse[] = {0.5, 0.4, 0.0, 1.0};
+	GLfloat mat_specular[] = {0.5, 0.4, 0.0, 1.0};
 	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mat_specular);
 	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mat_diffuse);
 	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, mat_ambient);
@@ -599,7 +600,7 @@ void ClipQuarterObject()
 	glEnable(GL_CLIP_PLANE0);
 	glEnable(GL_CLIP_PLANE2);
 
-	for (int i = 0; i<objects.size(); i++)
+	for (int i = 0; i < objects.size(); i++)
 		objects[i]->DrawSceneObject(glParam, false, 1.0);
 
 	glDisable(GL_CLIP_PLANE0);
@@ -608,7 +609,7 @@ void ClipQuarterObject()
 	glEnable(GL_CLIP_PLANE0);
 	glEnable(GL_CLIP_PLANE3);
 
-	for (int i = 0; i<objects.size(); i++)
+	for (int i = 0; i < objects.size(); i++)
 		objects[i]->DrawSceneObject(glParam, false, 1.0);
 
 	glDisable(GL_CLIP_PLANE0);
@@ -617,7 +618,7 @@ void ClipQuarterObject()
 	glEnable(GL_CLIP_PLANE1);
 	glEnable(GL_CLIP_PLANE2);
 
-	for (int i = 0; i<objects.size(); i++)
+	for (int i = 0; i < objects.size(); i++)
 		objects[i]->DrawSceneObject(glParam, false, 1.0);
 
 	glDisable(GL_CLIP_PLANE1);
@@ -630,24 +631,20 @@ void ClipQuarterObject()
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_DST_ALPHA);
 
-
-	for (int i = 0; i<objects.size(); i++)
+	for (int i = 0; i < objects.size(); i++)
 		objects[i]->DrawSceneObject(glParam, false, glParam->displayLevel / 20.0);
 
 	glDisable(GL_BLEND);
 
 	glDisable(GL_CLIP_PLANE1);
 	glDisable(GL_CLIP_PLANE3);
-
 }
-
 
 void DrawVolume(float volume, float maxVolume)
 {
 	float overlaySizeX = 25;
 	float overlaySizeY = 100;
-	float volumeFraction = (volume - sceneVolume) / (sceneVolume*1.25);
-
+	float volumeFraction = (volume - sceneVolume) / (sceneVolume * 1.25);
 
 	Float4 pos = Float4(viewport.w - overlaySizeX - 50, viewport.h - overlaySizeY - 50, overlaySizeX, overlaySizeY);
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
@@ -687,7 +684,7 @@ void DrawVolume(float volume, float maxVolume)
 
 void Display()
 {
-	//Setup the viewport
+	// Setup the viewport
 	glViewport(0, 0, viewport.w, viewport.h);
 
 	float backgroundTransparency = 1 - glParam->displayLevel / 20.0;
@@ -696,8 +693,7 @@ void Display()
 		glClearColor(1, 1, 1, backgroundTransparency);
 
 	// Clear the background
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);	// Clear Screen And Depth Buffer
-
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT); // Clear Screen And Depth Buffer
 
 	Float4 bottomColor = Float4(0.9, 0.9, 0.9, backgroundTransparency);
 	Float4 topColor = Float4(.35, 0.7, 1.0, backgroundTransparency);
@@ -735,7 +731,7 @@ void Display()
 		DrawReflection();
 
 	// Draw all the objects
-	for (int i = 0; i<lights.size(); i++)
+	for (int i = 0; i < lights.size(); i++)
 		lights[i].Apply();
 
 #ifdef DRAWEDGES
@@ -762,23 +758,23 @@ void Display()
 		if (displaySelectedObject && selectedObject < objects.size())
 			objects[selectedObject]->DrawSceneObject(glParam, false, 1.0);
 		else
-		for (int i = 0; i<objects.size(); i++)
-			objects[i]->DrawSceneObject(glParam, false, 1.0);
+			for (int i = 0; i < objects.size(); i++)
+				objects[i]->DrawSceneObject(glParam, false, 1.0);
 	}
 
 #ifdef COMPUTEMOMENTS
 	if (objects.size() > 0)
-	if (objects[0]->massCenterComputed)
-		DrawVolume(objects[0]->volume, pow(sceneSize / 2.0, 3));
+		if (objects[0]->massCenterComputed)
+			DrawVolume(objects[0]->volume, pow(sceneSize / 2.0, 3));
 #endif
 
 #ifdef DRAWEDGES
 	glDisable(GL_POLYGON_OFFSET_FILL);
-	//Draw Outline
+	// Draw Outline
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	glEnable(GL_COLOR_MATERIAL);
 	glColor4f(0, 1, 0, 1);
-	for (int i = 0; i<objects.size(); i++)
+	for (int i = 0; i < objects.size(); i++)
 		objects[i]->DrawSceneObject(glParam, false, 1.0);
 	glDisable(GL_COLOR_MATERIAL);
 #endif
@@ -789,27 +785,26 @@ void Display()
 		MarkClosestPoints(glParam->point1, glParam->point2, markColor, true);
 	}
 
-
 #ifdef DEBUG
-	//iddo: @@ for debug rendering - projected points were copied into evaluatedPoints2
+	// iddo: @@ for debug rendering - projected points were copied into evaluatedPoints2
 	if (glParam->closestPointComputed)
 	{
-		float * evaluatedPoints1 = nurbsSurfaces[0]->evalParams->evaluatedPoints;
-		float * evaluatedPoints2 = nurbsSurfaces[1]->evalParams->evaluatedPoints;
-		int uNum = int(intRes*pow(2.0, glParam->displayLevel));
+		float *evaluatedPoints1 = nurbsSurfaces[0]->evalParams->evaluatedPoints;
+		float *evaluatedPoints2 = nurbsSurfaces[1]->evalParams->evaluatedPoints;
+		int uNum = int(intRes * pow(2.0, glParam->displayLevel));
 		int vNum = uNum;
 
 		for (int j = 0; j < vNum + 1; j++)
 		{
 			for (int i = 0; i < uNum + 1; i++)
 			{
-				float wij = evaluatedPoints1[4 * (j*(uNum + 1) + i) + 3];
-				Float3 point1(evaluatedPoints1[4 * (j*(uNum + 1) + i) + 0] / wij,
-					evaluatedPoints1[4 * (j*(uNum + 1) + i) + 1] / wij,
-					evaluatedPoints1[4 * (j*(uNum + 1) + i) + 2] / wij);
-				Float3 point2(evaluatedPoints2[4 * (j*(uNum + 1) + i) + 0],
-					evaluatedPoints2[4 * (j*(uNum + 1) + i) + 1],
-					evaluatedPoints2[4 * (j*(uNum + 1) + i) + 2]);
+				float wij = evaluatedPoints1[4 * (j * (uNum + 1) + i) + 3];
+				Float3 point1(evaluatedPoints1[4 * (j * (uNum + 1) + i) + 0] / wij,
+							  evaluatedPoints1[4 * (j * (uNum + 1) + i) + 1] / wij,
+							  evaluatedPoints1[4 * (j * (uNum + 1) + i) + 2] / wij);
+				Float3 point2(evaluatedPoints2[4 * (j * (uNum + 1) + i) + 0],
+							  evaluatedPoints2[4 * (j * (uNum + 1) + i) + 1],
+							  evaluatedPoints2[4 * (j * (uNum + 1) + i) + 2]);
 				Float3 markColor = Float3(0, 1, 0);
 				MarkClosestPoints(point1, point2, markColor);
 			}
@@ -819,7 +814,7 @@ void Display()
 
 	if (glParam->drawVoxels)
 	{
-		for (int i = 0; i<objects.size(); i++)
+		for (int i = 0; i < objects.size(); i++)
 		{
 #ifdef DRAWFACEBBOX
 			objects[i]->DrawFaceBoundingBoxes(glParam);
@@ -837,7 +832,7 @@ void Display()
 					glPopMatrix();
 
 #else
-	objects[i]->DrawVoxels(glParam);
+					objects[i]->DrawVoxels(glParam);
 #endif
 				}
 				else
@@ -887,18 +882,18 @@ void TransformObjects(Float2 disp, bool rotate)
 {
 	glMatrixMode(GL_MODELVIEW);
 	float viewMatrix[16];
-	glGetFloatv(GL_MODELVIEW_MATRIX, viewMatrix);	// get the viewMatrix
+	glGetFloatv(GL_MODELVIEW_MATRIX, viewMatrix); // get the viewMatrix
 
 	Float3 xAxis = Float3(viewMatrix[0], viewMatrix[4], viewMatrix[8]);
 	Float3 yAxis = Float3(viewMatrix[1], viewMatrix[5], viewMatrix[9]);
 	VectorNormalize(xAxis);
 	VectorNormalize(yAxis);
-	Float3 compute_axisx = xAxis*disp[0];
-	Float3 compute_axisy = yAxis*disp[1];
+	Float3 compute_axisx = xAxis * disp[0];
+	Float3 compute_axisy = yAxis * disp[1];
 	Float3 compute_axis = compute_axisx - compute_axisy;
-	Float3 localTranslate = compute_axis*(modelSize / (100.0*zoomFactor));
-	Float3 x_localAxis = xAxis*disp[1];
-	Float3 y_localAxis = yAxis*disp[0];
+	Float3 localTranslate = compute_axis * (modelSize / (100.0 * zoomFactor));
+	Float3 x_localAxis = xAxis * disp[1];
+	Float3 y_localAxis = yAxis * disp[0];
 	Float3 localAxis = y_localAxis + x_localAxis;
 	VectorNormalize(localAxis);
 
@@ -910,11 +905,11 @@ void TransformObjects(Float2 disp, bool rotate)
 		glTranslated(localTranslate[0], localTranslate[1], localTranslate[2]);
 #ifdef DYNAMICOBJECTMOVE
 	glMultMatrixf(objects[selectedObject2]->transformationMatrix);
-	glGetFloatv(GL_MODELVIEW_MATRIX, objects[selectedObject2]->transformationMatrix);	// get the viewMatrix
+	glGetFloatv(GL_MODELVIEW_MATRIX, objects[selectedObject2]->transformationMatrix); // get the viewMatrix
 	objects[selectedObject2]->identityTransformation = false;
 	for (int i = 0; i < objects[selectedObject2]->faces.size(); i++)
 #endif
-	glPopMatrix();
+		glPopMatrix();
 }
 
 // handle ascii keyboard events
@@ -922,7 +917,7 @@ void SpecialKeys(int key, int x, int y)
 {
 	glMatrixMode(GL_MODELVIEW);
 	float viewMatrix[16];
-	glGetFloatv(GL_MODELVIEW_MATRIX, viewMatrix);	// get the viewMatrix
+	glGetFloatv(GL_MODELVIEW_MATRIX, viewMatrix); // get the viewMatrix
 
 	Float3 xAxis = Float3(viewMatrix[0], viewMatrix[4], viewMatrix[8]);
 	Float3 yAxis = Float3(viewMatrix[1], viewMatrix[5], viewMatrix[9]);
@@ -954,7 +949,7 @@ void SpecialKeys(int key, int x, int y)
 		if (keyMod == GLUT_ACTIVE_SHIFT)
 		{
 			localTranslate = (yAxis * 10);
-			localTranslate = - localTranslate;
+			localTranslate = -localTranslate;
 			glTranslated(localTranslate[0], localTranslate[1], localTranslate[2]);
 		}
 		else if (keyMod == GLUT_ACTIVE_CTRL)
@@ -972,7 +967,7 @@ void SpecialKeys(int key, int x, int y)
 		if (keyMod == GLUT_ACTIVE_SHIFT)
 		{
 			localTranslate = (xAxis * 10);
-			localTranslate = - localTranslate;
+			localTranslate = -localTranslate;
 			glTranslated(localTranslate[0], localTranslate[1], localTranslate[2]);
 		}
 		else if (keyMod == GLUT_ACTIVE_CTRL)
@@ -1018,10 +1013,10 @@ void PerformPicking(bool alreadyPicked)
 	glGetIntegerv(GL_VIEWPORT, viewport);
 
 	float invertY = viewport[3] - currentPoint[1];
-	float xratio = 1.*currentPoint[0] / viewport[2];
-	float yratio = 1.*invertY / viewport[3];
-	float tempx = (camera.rightcp - camera.leftcp)*xratio + camera.leftcp;
-	float tempy = (camera.topcp - camera.bottomcp)*yratio + camera.bottomcp;
+	float xratio = 1. * currentPoint[0] / viewport[2];
+	float yratio = 1. * invertY / viewport[3];
+	float tempx = (camera.rightcp - camera.leftcp) * xratio + camera.leftcp;
+	float tempy = (camera.topcp - camera.bottomcp) * yratio + camera.bottomcp;
 	GLfloat *pt = new GLfloat[4];
 	pt[0] = tempx;
 	pt[1] = tempy;
@@ -1037,7 +1032,7 @@ void PerformPicking(bool alreadyPicked)
 			Float3 localTranslate;
 
 			double viewMatrix[16];
-			glGetDoublev(GL_MODELVIEW_MATRIX, viewMatrix);	// get the viewMatrix
+			glGetDoublev(GL_MODELVIEW_MATRIX, viewMatrix); // get the viewMatrix
 
 			xAxis[0] = viewMatrix[0];
 			xAxis[1] = viewMatrix[4];
@@ -1054,13 +1049,10 @@ void PerformPicking(bool alreadyPicked)
 			Float3 translateY = move[1] * yAxis;
 			Float3 translate = translateX - translateY;
 
-
-
-
 #ifdef DYNAMICHD
 			float point1[3], point2[3];
 
-			//timer.Start();
+			// timer.Start();
 
 			glParam->closestPointComputed = true;
 			glParam->point1 = Float3(point1[0], point1[1], point1[2]);
@@ -1088,7 +1080,7 @@ void SilhoetteOrbitControl(Float2 disp)
 {
 	glMatrixMode(GL_MODELVIEW);
 	float viewMatrix[16];
-	glGetFloatv(GL_MODELVIEW_MATRIX, viewMatrix);	// get the viewMatrix
+	glGetFloatv(GL_MODELVIEW_MATRIX, viewMatrix); // get the viewMatrix
 
 	Float3 xAxis = Float3(viewMatrix[0], viewMatrix[4], viewMatrix[8]);
 	Float3 zAxis = Float3(viewMatrix[2], viewMatrix[6], viewMatrix[10]);
@@ -1096,24 +1088,23 @@ void SilhoetteOrbitControl(Float2 disp)
 	VectorNormalize(zAxis);
 
 	Float3 localAxisZ = disp[0] * zAxis;
-	localAxisZ = - localAxisZ;
+	localAxisZ = -localAxisZ;
 	Float3 localAxisX = disp[1] * xAxis;
 	Float3 localAxis = localAxisZ + localAxisX;
-
 
 	VectorNormalize(localAxis);
 
 	glPushMatrix();
 	glLoadIdentity();
 	glRotated(VectorMagnitude(disp), localAxis[0], localAxis[1], localAxis[2]);
-	glGetFloatv(GL_MODELVIEW_MATRIX, viewMatrix);	// get the viewMatrix
+	glGetFloatv(GL_MODELVIEW_MATRIX, viewMatrix); // get the viewMatrix
 	glPopMatrix();
 
 	silhouettePoint = TransformPoint(silhouettePoint, viewMatrix);
 	silhouetteVector = silhouettePoint;
 	VectorNormalize(silhouetteVector);
 	silhouetteVector *= -1.0;
-	silhouettePoint = silhouetteVector*(-modelSize*silhouetteArrowFactor);
+	silhouettePoint = silhouetteVector * (-modelSize * silhouetteArrowFactor);
 
 	EvaluateSilhouette();
 }
@@ -1126,7 +1117,7 @@ void KeyPress(unsigned char key, int x, int y)
 	{
 	case 'q':
 	case 'Q':
-		//Quit
+		// Quit
 		exit(0);
 		break;
 	case 's':
@@ -1163,9 +1154,9 @@ void KeyPress(unsigned char key, int x, int y)
 		break;
 	case '.':
 	case '>':
-		//Zoom in
+		// Zoom in
 		glMatrixMode(GL_MODELVIEW);
-		glGetFloatv(GL_MODELVIEW_MATRIX, viewMatrix);	// get the viewMatrix
+		glGetFloatv(GL_MODELVIEW_MATRIX, viewMatrix); // get the viewMatrix
 		glLoadIdentity();
 		scale = 1.25;
 		glScaled(scale, scale, scale);
@@ -1175,9 +1166,9 @@ void KeyPress(unsigned char key, int x, int y)
 		break;
 	case ',':
 	case '<':
-		//Zoom out
+		// Zoom out
 		glMatrixMode(GL_MODELVIEW);
-		glGetFloatv(GL_MODELVIEW_MATRIX, viewMatrix);	// get the viewMatrix
+		glGetFloatv(GL_MODELVIEW_MATRIX, viewMatrix); // get the viewMatrix
 		glLoadIdentity();
 		scale = 0.8;
 		glScaled(scale, scale, scale);
@@ -1187,12 +1178,12 @@ void KeyPress(unsigned char key, int x, int y)
 		break;
 	case 'e':
 	case 'E':
-		//Evaluate all surfaces
+		// Evaluate all surfaces
 		evaluated = false;
 		break;
 	case 'y':
 	case 'Y':
-		//Evaluate all surfaces
+		// Evaluate all surfaces
 		displaySelectedObject = !displaySelectedObject;
 		break;
 	case 'a':
@@ -1286,7 +1277,7 @@ void KeyPress(unsigned char key, int x, int y)
 	case '~':
 		// Standard views
 		glMatrixMode(GL_MODELVIEW);
-		glGetFloatv(GL_MODELVIEW_MATRIX, viewMatrix);	// get the viewMatrix
+		glGetFloatv(GL_MODELVIEW_MATRIX, viewMatrix); // get the viewMatrix
 		zoomFactor = 1;
 		glLoadIdentity();
 
@@ -1331,7 +1322,7 @@ void KeyPress(unsigned char key, int x, int y)
 		}
 		else
 		{
-			//StopAnimation();
+			// StopAnimation();
 			animate = false;
 		}
 		break;
@@ -1347,13 +1338,13 @@ void KeyPress(unsigned char key, int x, int y)
 	case '#':
 		selectedObject++;
 		numDispPoints++;
-		//clipPlaneDistZ += 0.1;
+		// clipPlaneDistZ += 0.1;
 		break;
 	case '4':
 	case '$':
 		selectedObject--;
 		numDispPoints--;
-		//clipPlaneDistZ -= 0.1;
+		// clipPlaneDistZ -= 0.1;
 		break;
 	case '5':
 	case '%':
@@ -1373,19 +1364,17 @@ void KeyPress(unsigned char key, int x, int y)
 		break;
 	case 't':
 	case 'T':
-		//PerformBooleanOperation();
-		//glParam->voxelCount = 100;
-		for (int i = 0; i<objects.size(); i++)
+		// PerformBooleanOperation();
+		// glParam->voxelCount = 100;
+		for (int i = 0; i < objects.size(); i++)
 			if (objects[i]->voxelData == NULL)
 				objects[i]->PerformVoxelization(glParam, -1);
 		break;
 	default:
 		cerr << "Key " << key << " not supported" << endl;
-
 	}
 	glutPostRedisplay();
 }
-
 
 // This functions is called whenever the mouse is pressed or released
 // button is a number 0 to 2 designating the button
@@ -1395,7 +1384,7 @@ void MouseClick(int button, int state, int x, int y)
 	currentPoint[0] = x;
 	currentPoint[1] = y;
 	Float2 midPoint;
-	float aspectRatio = (viewport.h*1.0) / (viewport.w*1.0);
+	float aspectRatio = (viewport.h * 1.0) / (viewport.w * 1.0);
 	midPoint[0] = viewport.w / 2.0;
 	midPoint[1] = viewport.h / 2.0;
 	int keyMod = glutGetModifiers();
@@ -1403,11 +1392,11 @@ void MouseClick(int button, int state, int x, int y)
 	{
 		float viewMatrix[16];
 		glMatrixMode(GL_MODELVIEW);
-		glGetFloatv(GL_MODELVIEW_MATRIX, viewMatrix);	// get the viewMatrix
+		glGetFloatv(GL_MODELVIEW_MATRIX, viewMatrix); // get the viewMatrix
 
 		float scale = .926;
 		Float2 move1 = (currentPoint - midPoint);
-		Float2 move = move1*((1.0 - 1.0 / scale)*modelSize / 100.0);
+		Float2 move = move1 * ((1.0 - 1.0 / scale) * modelSize / 100.0);
 
 		glLoadIdentity();
 		glScaled(scale, scale, scale);
@@ -1416,18 +1405,18 @@ void MouseClick(int button, int state, int x, int y)
 
 		zoomFactor *= scale;
 
-		//evaluated = false;
+		// evaluated = false;
 		glutPostRedisplay();
 	}
 	else if (button == 4 && state == GLUT_DOWN)
 	{
 		float viewMatrix[16];
 		glMatrixMode(GL_MODELVIEW);
-		glGetFloatv(GL_MODELVIEW_MATRIX, viewMatrix);	// get the viewMatrix
+		glGetFloatv(GL_MODELVIEW_MATRIX, viewMatrix); // get the viewMatrix
 
 		float scale = 1.08;
 		Float2 move1 = (currentPoint - midPoint);
-		Float2 move = move1*((1.0 - 1.0 / scale)*modelSize / 100.0);
+		Float2 move = move1 * ((1.0 - 1.0 / scale) * modelSize / 100.0);
 
 		glLoadIdentity();
 		glScaled(scale, scale, scale);
@@ -1436,7 +1425,7 @@ void MouseClick(int button, int state, int x, int y)
 
 		zoomFactor *= scale;
 
-		//evaluated = false;
+		// evaluated = false;
 		glutPostRedisplay();
 	}
 	else if (state == GLUT_DOWN && button == GLUT_LEFT_BUTTON && keyMod == GLUT_ACTIVE_SHIFT)
@@ -1522,7 +1511,7 @@ void MouseMove(int x, int y)
 	{
 		glMatrixMode(GL_MODELVIEW);
 		float viewMatrix[16];
-		glGetFloatv(GL_MODELVIEW_MATRIX, viewMatrix);	// get the viewMatrix
+		glGetFloatv(GL_MODELVIEW_MATRIX, viewMatrix); // get the viewMatrix
 
 		Float3 xAxis = Float3(1, 0, 0);
 		Float3 yAxis = Float3(0, 1, 0);
@@ -1530,7 +1519,8 @@ void MouseMove(int x, int y)
 		Float2 angle = currentPoint - clickPoint;
 		Float3 y_angle = angle[0] * yAxis;
 		Float3 x_angle = angle[1] * xAxis;
-		Float3 localAxis = y_angle + x_angle;		VectorNormalize(localAxis);
+		Float3 localAxis = y_angle + x_angle;
+		VectorNormalize(localAxis);
 		glLoadIdentity();
 		glRotated(VectorMagnitude(angle), localAxis[0], localAxis[1], localAxis[2]);
 		glMultMatrixf(viewMatrix);
@@ -1541,7 +1531,7 @@ void MouseMove(int x, int y)
 	{
 		glMatrixMode(GL_MODELVIEW);
 		float viewMatrix[16];
-		glGetFloatv(GL_MODELVIEW_MATRIX, viewMatrix);	// get the viewMatrix
+		glGetFloatv(GL_MODELVIEW_MATRIX, viewMatrix); // get the viewMatrix
 
 		Float3 xAxis = Float3(1, 0, 0);
 		Float3 yAxis = Float3(0, 1, 0);
@@ -1550,7 +1540,7 @@ void MouseMove(int x, int y)
 		Float3 x_move = move[0] * xAxis;
 		Float3 y_move = move[1] * yAxis;
 		Float3 xy_move = x_move - y_move;
-		Float3 mult_move = xy_move*modelSize;
+		Float3 mult_move = xy_move * modelSize;
 		Float3 localTranslate = mult_move / 100.0;
 
 		glLoadIdentity();
@@ -1586,12 +1576,12 @@ void CloseWindow(void)
 #endif
 }
 
-
 // Function to calculate length of given string in a command line argument
 int CommandLineArgLength(char *string)
 {
 	int i;
-	for (i = 0; string[i] != '\0'; i++);
+	for (i = 0; string[i] != '\0'; i++)
+		;
 	return i;
 }
 
@@ -1615,7 +1605,7 @@ int main(int argc, char *argv[])
 #endif
 
 	glutInitWindowSize(viewport.w, viewport.h);
-	//glutInitWindowPosition(stoi(argv[1]),stoi(argv[2]));
+	// glutInitWindowPosition(stoi(argv[1]),stoi(argv[2]));
 	glutInitWindowPosition(250, 250);
 
 	glutCreateWindow(argv[0]);
@@ -1643,45 +1633,75 @@ int main(int argc, char *argv[])
 	{
 		if (argv[i] != NULL)
 		{
-			char* currentArg = argv[i];
+			std::size_t fileIndex=i;
+			char *currentArg = argv[i++];
+			double deltaX, deltaY, deltaZ;
+			if (argv[i++] == std::string("deltaX"))
+			{
+				char *deltaXArg = argv[i++];
+				deltaX = atof(deltaXArg);
+			}
+			else{
+				std::cerr<<"please specify delta x.\n";
+			}
+			if (argv[i++] == std::string("deltaY"))
+			{
+				char *deltaYArg = argv[i++];
+				deltaY = atof(deltaYArg);
+			}
+			else{
+				std::cerr<<"please specify delta y.\n";
+			}
+			if (argv[i++] == std::string("deltaZ"))
+			{
+				char *deltaZArg = argv[i];
+				deltaZ = atof(deltaZArg);
+			}
+			else{
+				std::cerr<<"please specify delta z.\n";
+			}
 			int argLen = CommandLineArgLength(currentArg);
-			char* fileType[3];
-			strncpy((char*)fileType, (const char*)(currentArg + argLen - 3), sizeof("off"));
-			if (strcmp((const char*)fileType, "OBJ") == 0 || strcmp((const char*)fileType, "obj") == 0)
-				ReadOBJFile(argv[i], i + 1);
-			else if (strcmp((const char*)fileType, "OFF") == 0 || strcmp((const char*)fileType, "off") == 0)
-				ReadOFFFile(argv[i], i + 1);
-			else if (strcmp((const char*)fileType, "RAW") == 0 || strcmp((const char*)fileType, "raw") == 0)
-				ReadRAWFile(argv[i], i + 1);
+			char *fileType[3];
+			strncpy((char *)fileType, (const char *)(currentArg + argLen - 3), sizeof("off"));
+			if (strcmp((const char *)fileType, "OBJ") == 0 || strcmp((const char *)fileType, "obj") == 0)
+				ReadOBJFile(argv[fileIndex], i/4 + 2,deltaX,deltaY,deltaZ);
+			// else if (strcmp((const char *)fileType, "OFF") == 0 || strcmp((const char *)fileType, "off") == 0)
+			// 	ReadOFFFile(argv[i], i + 1);
+			// else if (strcmp((const char *)fileType, "RAW") == 0 || strcmp((const char *)fileType, "raw") == 0)
+			// 	ReadRAWFile(argv[i], i + 1);
 			else
-				cout << "Unknown file type : " << (const char*)fileType << endl;
+				cout << "Unknown file type : " << (const char *)fileType << endl;
 		}
 	}
 	// Create Flat Triangle Data Structure
 	CreateFlatTriangleData();
 
+		// PerformBooleanOperation();
+		// glParam->voxelCount = 100;
+		for (int i = 0; i < objects.size(); i++)
+			if (objects[i]->voxelData == NULL)
+				objects[i]->PerformVoxelization(glParam, -1);
+// #ifdef SAVESTL
+// 	// Save as STL Files
+// 	for (int i = 0; i < objects.size(); i++)
+// 	{
+// 		string f = "composite_layer_";
+// 		string path = argv[2];
+// 		string fname = path + f + to_string(i + 1) + ".stl";
+// 		char *fn = new char[fname.size() + 1];
+// 		fname.copy(fn, fname.size(), 0);
+// 		fn[fname.size()] = '\0';
+// 		string objname = "layer_" + to_string(i + 1);
 
-#ifdef SAVESTL
-	//Save as STL Files
-	for (int i = 0; i < objects.size(); i++)
-	{
-		string f = "composite_layer_";
-		string path = argv[2];
-		string fname = path + f + to_string(i + 1) + ".stl";
-		char *fn = new char[fname.size() + 1];
-		fname.copy(fn, fname.size(), 0);
-		fn[fname.size()] = '\0';
-		string objname = "layer_" + to_string(i + 1);
+// 		char *on = new char[objname.size() + 1];
+// 		objname.copy(on, objname.size(), 0);
+// 		on[objname.size()] = '\0';
 
-		char *on = new char[objname.size() + 1];
-		objname.copy(on, objname.size(), 0);
-		on[objname.size()] = '\0';
-
-		objects[i]->SaveSTLFile(fn, on);
-		delete[] fn;
-		delete[] on;
-	}
-#endif
+// 		objects[i]->SaveSTLFile(fn, on);
+// 		delete[] fn;
+// 		delete[] on;
+// 	}
+// #endif
 
 	// Initialize GL and Display Lists
 	InitGL();
