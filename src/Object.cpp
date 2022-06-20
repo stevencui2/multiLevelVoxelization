@@ -2936,7 +2936,8 @@ void Object::SaveVoxelization(GLParameters *glParam)
 	ofstream level1InOutFile;
 
 	// Level 2 Files
-	// ofstream level1BoundaryPrefixSumFile;
+	ofstream level1BoundaryPrefixSumFile;
+	ofstream level1BoundaryIndexFile;
 	ofstream level2InOutFile;
 	// ofstream level2NormalFile;
 
@@ -2954,11 +2955,13 @@ void Object::SaveVoxelization(GLParameters *glParam)
 
 	if (glParam->level2Voxels)
 	{
-		// string level1BoundaryPrefixSumFileName = fileNamePrefix + "Level1BoundaryPrefixSum.raw";
+		string level1BoundaryPrefixSumFileName = fileNamePrefix + "Level1BoundaryPrefixSum.raw";
+		string level1BoundaryIndexName = fileNamePrefix + "Level1BoundaryIndex.raw";
 		string level2InOutFileName = fileNamePrefix + "Level2InOut.raw";
 		// string level2NormalFileName = fileNamePrefix + "Level2Normal.raw";
 
-		// level1BoundaryPrefixSumFile.open(level1BoundaryPrefixSumFileName, std::ofstream::binary);
+		level1BoundaryPrefixSumFile.open(level1BoundaryPrefixSumFileName, std::ofstream::binary);
+		level1BoundaryIndexFile.open(level1BoundaryIndexName, std::ofstream::binary);
 		level2InOutFile.open(level2InOutFileName, std::ofstream::binary);
 		// level2NormalFile.open(level2NormalFileName, std::ofstream::binary);
 	}
@@ -2967,7 +2970,7 @@ void Object::SaveVoxelization(GLParameters *glParam)
 	if (!voxelConfigFile.good() || !level1InOutFile.good() /* || !level1NormalFile.good() */)
 		fileOpenError = true;
 	if (glParam->level2Voxels)
-		if (/* !level1BoundaryPrefixSumFile.good() || */ !level2InOutFile.good() /* || !level2NormalFile.good() */)
+		if (!level1BoundaryPrefixSumFile.good() ||!level1BoundaryIndexFile.good() || !level2InOutFile.good() /* || !level2NormalFile.good() */)
 			fileOpenError = true;
 
 	if (fileOpenError)
@@ -3044,12 +3047,14 @@ void Object::SaveVoxelization(GLParameters *glParam)
 	// Write Level 2 data into respective files
 	if (glParam->level2Voxels)
 	{
-		// level1BoundaryPrefixSumFile.write(reinterpret_cast<const char *>(this->voxelData->boundaryPrefixSum), numLevel1Voxels * sizeof(int));
+		level1BoundaryPrefixSumFile.write(reinterpret_cast<const char *>(this->voxelData->boundaryPrefixSum), numLevel1Voxels * sizeof(int));
+		level1BoundaryIndexFile.write(reinterpret_cast<const char *>(this->voxelData->boundaryIndex.data()), this->voxelData->boundaryIndex.size()* sizeof(int));
 		level2InOutFile.write((char *)level2InOutData, numLevel1BoundaryVoxels * numLevel2Voxels * sizeof(outputDType));
 		// level2NormalFile.write((char*)level2NormalData, numLevel1BoundaryVoxels * numLevel2Voxels * 3 * sizeof(outputDType));
 		delete[] level2InOutData;
 		// delete[] level2NormalData;
-		// level1BoundaryPrefixSumFile.close();
+		level1BoundaryPrefixSumFile.close();
+		level1BoundaryIndexFile.close();
 		level2InOutFile.close();
 		// level2NormalFile.close();
 	}
@@ -3065,18 +3070,31 @@ void Object::SaveVoxelizationVTK()
 	vtkSmartPointer<vtkImageData> level2InOutSub = vtkSmartPointer<vtkImageData>::New();
 	int vtkDataType = VTK_DOUBLE;
 
-	int numDivX = this->voxelData->numDivX;
-	int numDivY = this->voxelData->numDivY;
-	int numDivZ = this->voxelData->numDivZ;
+	int numDivX = this->voxelData->numDivX + 1;
+	int numDivY = this->voxelData->numDivY + 1;
+	int numDivZ = this->voxelData->numDivZ + 1;
 	int numComponent = numDivX * numDivY * numDivZ;
 	level1InOut->SetExtent(0, numDivX - 1, 0, numDivY - 1, 0, numDivZ - 1);
 	level1InOut->AllocateScalars(vtkDataType, 1);
 	level1InOut->SetSpacing(this->voxelData->gridSizeX, this->voxelData->gridSizeY, this->voxelData->gridSizeZ);
 	level1InOut->SetOrigin(this->bBoxMin[0], this->bBoxMin[1], this->bBoxMin[2]);
 	vtkDataArray *newScalars = level1InOut->GetPointData()->GetScalars();
+	// for (int z = 0; z < numDivZ; z++)
+	// {
+	// 	for (int y = 0; y < numDivY; y++)
+	// 	{
+	// 		for (int x = 0; x < numDivX; x++)
+	// 		{
+	// 			double *pixel =static_cast<double *>(level1InOut->GetScalarPointer(x, y, z));
+	// 			std::size_t index = z * numDivX * numDivY + y * numDivX + x;
+	// 			if(x)
+	// 			pixel[0] = this->voxelData->level1InOut[index] * inOutScale;
+	// 		}
+	// 	}
+	// }
 	for (std::size_t index = 0; index < numComponent; ++index)
 	{
-		newScalars->SetComponent(index, 0, this->voxelData->level1InOut[index]*inOutScale);
+		newScalars->SetComponent(index, 0, this->voxelData->level1InOut[index] * inOutScale);
 	}
 	vtkSmartPointer<vtkXMLImageDataWriter> writer = vtkSmartPointer<vtkXMLImageDataWriter>::New();
 	writer->SetFileName("level1InOut.vti");
@@ -3101,9 +3119,9 @@ void Object::SaveVoxelizationVTK()
 		for (std::size_t i = 0; i < numLevel2Voxel; ++i)
 		{
 			int index = boundaryVoxelIndex * numLevel2Voxel + i;
-			newScalarsLevel2->SetComponent(i, 0, this->voxelData->level2InOut[index]*inOutScale);
+			newScalarsLevel2->SetComponent(i, 0, this->voxelData->level2InOut[index] * inOutScale);
 		}
-		std::string fileName="level2InOut" + std::to_string(boundaryVoxelIndex) + ".vti";
+		std::string fileName = "level2InOut" + std::to_string(boundaryVoxelIndex) + ".vti";
 		writer->SetFileName(fileName.c_str());
 		writer->SetInputData(level2InOutSub);
 		writer->Write();
@@ -3417,8 +3435,10 @@ void Object::PerformVoxelization(GLParameters *glParam, int bufferSize)
 	}
 
 	if (glParam->saveVoxels)
-		// this->SaveVoxelization(glParam);
+	{
+		this->SaveVoxelization(glParam);
 		this->SaveVoxelizationVTK();
+	}
 
 	if (timing)
 	{

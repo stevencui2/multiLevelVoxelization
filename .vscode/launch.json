@@ -12,7 +12,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/GPView",
-            "args": ["../files/cessna.obj"],
+            "args": ["../files/cessna.obj deltaX 5.0 deltaY 2.5 deltaZ 5.5"],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
             "environment": [],
