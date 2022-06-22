@@ -1597,35 +1597,35 @@ int main(int argc, char *argv[])
 
 	// Initialize GLUT
 	glutInit(&argc, argv);
-#ifdef MSAA
-	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_ALPHA | GLUT_STENCIL | GLUT_MULTISAMPLE);
-	glutSetOption(GLUT_MULTISAMPLE, 8);
-#else
-	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_ALPHA | GLUT_STENCIL);
-#endif
+// #ifdef MSAA
+// 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_ALPHA | GLUT_STENCIL | GLUT_MULTISAMPLE);
+// 	glutSetOption(GLUT_MULTISAMPLE, 8);
+// #else
+// 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_ALPHA | GLUT_STENCIL);
+// #endif
 
-	glutInitWindowSize(viewport.w, viewport.h);
-	// glutInitWindowPosition(stoi(argv[1]),stoi(argv[2]));
-	glutInitWindowPosition(250, 250);
+	// glutInitWindowSize(viewport.w, viewport.h);
+	// // glutInitWindowPosition(stoi(argv[1]),stoi(argv[2]));
+	// glutInitWindowPosition(250, 250);
 
 	glutCreateWindow(argv[0]);
 
-	glutDisplayFunc(Display);
-	glutIdleFunc(Idle);
-	glutReshapeFunc(ReSize);
-	glutMouseFunc(MouseClick);
-	glutMotionFunc(MouseMove);
-	glutKeyboardFunc(KeyPress);
-	glutSpecialFunc(SpecialKeys);
-	atexit(&CloseWindow);
-#ifdef USEFREEGLUT
-	glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_CONTINUE_EXECUTION);
-#endif
+// 	glutDisplayFunc(Display);
+// 	glutIdleFunc(Idle);
+// 	glutReshapeFunc(ReSize);
+// 	glutMouseFunc(MouseClick);
+// 	glutMotionFunc(MouseMove);
+// 	glutKeyboardFunc(KeyPress);
+// 	glutSpecialFunc(SpecialKeys);
+// 	atexit(&CloseWindow);
+// #ifdef USEFREEGLUT
+// 	glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_CONTINUE_EXECUTION);
+// #endif
 
 	InitGLEW();
 
 	// Parse lighting file
-	ParseInputFile("default.scene");
+	//ParseInputFile("default.scene");
 
 	if (argv[1] == NULL)
 		cout << "File not specified!" << endl;
@@ -1676,40 +1676,17 @@ int main(int argc, char *argv[])
 	// Create Flat Triangle Data Structure
 	CreateFlatTriangleData();
 
-		// PerformBooleanOperation();
-		// glParam->voxelCount = 100;
-		for (int i = 0; i < objects.size(); i++)
-			if (objects[i]->voxelData == NULL)
-				objects[i]->PerformVoxelization(glParam, -1);
-// #ifdef SAVESTL
-// 	// Save as STL Files
-// 	for (int i = 0; i < objects.size(); i++)
-// 	{
-// 		string f = "composite_layer_";
-// 		string path = argv[2];
-// 		string fname = path + f + to_string(i + 1) + ".stl";
-// 		char *fn = new char[fname.size() + 1];
-// 		fname.copy(fn, fname.size(), 0);
-// 		fn[fname.size()] = '\0';
-// 		string objname = "layer_" + to_string(i + 1);
-
-// 		char *on = new char[objname.size() + 1];
-// 		objname.copy(on, objname.size(), 0);
-// 		on[objname.size()] = '\0';
-
-// 		objects[i]->SaveSTLFile(fn, on);
-// 		delete[] fn;
-// 		delete[] on;
-// 	}
-// #endif
-
 	// Initialize GL and Display Lists
-	InitGL();
+	//InitGL();
 
 	// Initialize CUDA
 #ifdef USECUDA
 	InitializeCUDA();
 #endif
-
-	glutMainLoop();
+		// PerformBooleanOperation();
+		// glParam->voxelCount = 100;
+		for (int i = 0; i < objects.size(); i++)
+			if (objects[i]->voxelData == NULL)
+				objects[i]->PerformVoxelization(glParam, -1);
+	//glutMainLoop();
 }

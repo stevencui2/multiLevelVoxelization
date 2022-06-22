@@ -3483,10 +3483,10 @@ void Object::PerformVoxelization(GLParameters *glParam, int bufferSize)
 		}
 		cout << endl;
 	}
-#ifdef DISPLAYLISTS
-	if (glParam->drawVoxels)
-		this->GenVoxelsDisplayLists(glParam);
-#endif
+// #ifdef DISPLAYLISTS
+// 	if (glParam->drawVoxels)
+// 		this->GenVoxelsDisplayLists(glParam);
+// #endif
 }
 
 float Object::CalculateVolume(bool timing)
