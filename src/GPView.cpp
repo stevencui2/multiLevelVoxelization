@@ -25,7 +25,7 @@
 #include "../includes/Object.h"
 #include "../includes/GPUUtilities.h"
 #include "../includes/CUDAUtilities.h"
-
+#include <EGL/egl.h>
 // Resolution
 int intRes = 64;
 int silRes = 300;
@@ -190,9 +190,9 @@ void ReadOBJFile(char *fName, int dlID, double deltaX, double deltaY, double del
 	face->surfID = 0;
 	tempObject->faces.push_back(face);
 	tempObject->ReadObject(fName);
-	tempObject->deltaX=deltaX;
-	tempObject->deltaY=deltaY;
-	tempObject->deltaZ=deltaZ;
+	tempObject->deltaX = deltaX;
+	tempObject->deltaY = deltaY;
+	tempObject->deltaZ = deltaZ;
 
 	float currentModelSize = Distance(tempObject->bBoxMax, tempObject->bBoxMin) / 8.0;
 	modelSize = currentModelSize;
@@ -682,182 +682,6 @@ void DrawVolume(float volume, float maxVolume)
 	glPopAttrib();
 }
 
-void Display()
-{
-	// Setup the viewport
-	glViewport(0, 0, viewport.w, viewport.h);
-
-	float backgroundTransparency = 1 - glParam->displayLevel / 20.0;
-	glClearColor(0, 0, 0, 0);
-	if (backgroundColor == 1)
-		glClearColor(1, 1, 1, backgroundTransparency);
-
-	// Clear the background
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT); // Clear Screen And Depth Buffer
-
-	Float4 bottomColor = Float4(0.9, 0.9, 0.9, backgroundTransparency);
-	Float4 topColor = Float4(.35, 0.7, 1.0, backgroundTransparency);
-	if (backgroundColor == 2)
-		DrawBackground(bottomColor, topColor);
-
-	glEnable(GL_DEPTH_TEST);
-	// The Type Of Depth Testing To Do
-	glDepthFunc(GL_LEQUAL);
-
-	if (glParam->smooth)
-		glShadeModel(GL_SMOOTH);
-	else
-		glShadeModel(GL_FLAT);
-
-	if (glParam->wireframe)
-		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	else
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-	// Apply all the lights
-	glEnable(GL_LIGHTING);
-	glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
-	glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_TRUE);
-	glEnable(GL_NORMALIZE);
-
-	// If fixed view
-	if (fixedView)
-	{
-		glLoadIdentity();
-		glMultMatrixf(fixedViewMatrix);
-	}
-
-	if (reflectionPlane > 0)
-		DrawReflection();
-
-	// Draw all the objects
-	for (int i = 0; i < lights.size(); i++)
-		lights[i].Apply();
-
-#ifdef DRAWEDGES
-	glEnable(GL_POLYGON_OFFSET_FILL);
-	glPolygonOffset(1, 1);
-#endif
-
-#ifdef MSAA
-	glEnable(GL_MULTISAMPLE);
-	glHint(GL_MULTISAMPLE_FILTER_HINT_NV, GL_NICEST);
-
-	// detect current settings
-	GLint iMultiSample;
-	GLint iNumSamples;
-	glGetIntegerv(GL_SAMPLE_BUFFERS, &iMultiSample);
-	glGetIntegerv(GL_SAMPLES, &iNumSamples);
-	cout << "MSAA ON. GL_SAMPLE_BUFFERS = " << iMultiSample << ", GL_SAMPLES = " << iNumSamples << endl;
-#endif
-
-	if (clipping)
-		ClipQuarterObject();
-	else
-	{
-		if (displaySelectedObject && selectedObject < objects.size())
-			objects[selectedObject]->DrawSceneObject(glParam, false, 1.0);
-		else
-			for (int i = 0; i < objects.size(); i++)
-				objects[i]->DrawSceneObject(glParam, false, 1.0);
-	}
-
-#ifdef COMPUTEMOMENTS
-	if (objects.size() > 0)
-		if (objects[0]->massCenterComputed)
-			DrawVolume(objects[0]->volume, pow(sceneSize / 2.0, 3));
-#endif
-
-#ifdef DRAWEDGES
-	glDisable(GL_POLYGON_OFFSET_FILL);
-	// Draw Outline
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	glEnable(GL_COLOR_MATERIAL);
-	glColor4f(0, 1, 0, 1);
-	for (int i = 0; i < objects.size(); i++)
-		objects[i]->DrawSceneObject(glParam, false, 1.0);
-	glDisable(GL_COLOR_MATERIAL);
-#endif
-
-	if (glParam->closestPointComputed)
-	{
-		Float3 markColor = Float3(1, 0, 0);
-		MarkClosestPoints(glParam->point1, glParam->point2, markColor, true);
-	}
-
-#ifdef DEBUG
-	// iddo: @@ for debug rendering - projected points were copied into evaluatedPoints2
-	if (glParam->closestPointComputed)
-	{
-		float *evaluatedPoints1 = nurbsSurfaces[0]->evalParams->evaluatedPoints;
-		float *evaluatedPoints2 = nurbsSurfaces[1]->evalParams->evaluatedPoints;
-		int uNum = int(intRes * pow(2.0, glParam->displayLevel));
-		int vNum = uNum;
-
-		for (int j = 0; j < vNum + 1; j++)
-		{
-			for (int i = 0; i < uNum + 1; i++)
-			{
-				float wij = evaluatedPoints1[4 * (j * (uNum + 1) + i) + 3];
-				Float3 point1(evaluatedPoints1[4 * (j * (uNum + 1) + i) + 0] / wij,
-							  evaluatedPoints1[4 * (j * (uNum + 1) + i) + 1] / wij,
-							  evaluatedPoints1[4 * (j * (uNum + 1) + i) + 2] / wij);
-				Float3 point2(evaluatedPoints2[4 * (j * (uNum + 1) + i) + 0],
-							  evaluatedPoints2[4 * (j * (uNum + 1) + i) + 1],
-							  evaluatedPoints2[4 * (j * (uNum + 1) + i) + 2]);
-				Float3 markColor = Float3(0, 1, 0);
-				MarkClosestPoints(point1, point2, markColor);
-			}
-		}
-	}
-#endif
-
-	if (glParam->drawVoxels)
-	{
-		for (int i = 0; i < objects.size(); i++)
-		{
-#ifdef DRAWFACEBBOX
-			objects[i]->DrawFaceBoundingBoxes(glParam);
-#endif
-			if (objects[i]->voxelData != NULL)
-			{
-				if (glParam->displayLevel == 0)
-				{
-
-#ifdef DISPLAYLISTS
-					glMatrixMode(GL_MODELVIEW);
-					glPushMatrix();
-					glMultMatrixf(objects[i]->transformationMatrix);
-					glCallList(objects[i]->voxelData->dlID);
-					glPopMatrix();
-
-#else
-					objects[i]->DrawVoxels(glParam);
-#endif
-				}
-				else
-				{
-					glCallList(objects[i]->voxelData->dlID);
-				}
-			}
-		}
-	}
-
-#ifdef DISPLAYLISTS
-	glCallList(pointsDLid);
-#else
-	DrawPoints();
-#endif
-
-	// Finish drawing, update the frame buffer
-	// Swap the buffers (remember we are using double buffers)
-	glutSwapBuffers();
-
-	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_LIGHTING);
-	glDisable(GL_NORMALIZE);
-}
-
 void CreateFlatTriangleData()
 {
 	for (int objectID = 0; objectID < objects.size(); objectID++)
@@ -1109,272 +933,6 @@ void SilhoetteOrbitControl(Float2 disp)
 	EvaluateSilhouette();
 }
 
-void KeyPress(unsigned char key, int x, int y)
-{
-	float scale;
-	float viewMatrix[16];
-	switch (key)
-	{
-	case 'q':
-	case 'Q':
-		// Quit
-		exit(0);
-		break;
-	case 's':
-	case 'S':
-		// Toggle the smooth shading
-		glParam->smooth = !glParam->smooth;
-		break;
-	case 'g':
-	case 'G':
-		// Toggle the background color
-		backgroundColor = (backgroundColor + 1) % 3;
-		break;
-	case 'w':
-	case 'W':
-		// Toggle wireframe
-		glParam->wireframe = !glParam->wireframe;
-		break;
-	case 'c':
-	case 'C':
-		// Toggle controlMesh
-		glParam->controlMesh = !glParam->controlMesh;
-		break;
-	case 'b':
-	case 'B':
-		// Toggle bounding box visibility
-		glParam->drawBBox = !glParam->drawBBox;
-		evaluated = false;
-		break;
-	case 'x':
-	case 'X':
-		// Expand bounding box
-		glParam->expandBoundingBox = !glParam->expandBoundingBox;
-		evaluated = false;
-		break;
-	case '.':
-	case '>':
-		// Zoom in
-		glMatrixMode(GL_MODELVIEW);
-		glGetFloatv(GL_MODELVIEW_MATRIX, viewMatrix); // get the viewMatrix
-		glLoadIdentity();
-		scale = 1.25;
-		glScaled(scale, scale, scale);
-		glMultMatrixf(viewMatrix);
-		zoomFactor *= scale;
-		//		evaluated = false;
-		break;
-	case ',':
-	case '<':
-		// Zoom out
-		glMatrixMode(GL_MODELVIEW);
-		glGetFloatv(GL_MODELVIEW_MATRIX, viewMatrix); // get the viewMatrix
-		glLoadIdentity();
-		scale = 0.8;
-		glScaled(scale, scale, scale);
-		glMultMatrixf(viewMatrix);
-		zoomFactor *= scale;
-		//		evaluated = false;
-		break;
-	case 'e':
-	case 'E':
-		// Evaluate all surfaces
-		evaluated = false;
-		break;
-	case 'y':
-	case 'Y':
-		// Evaluate all surfaces
-		displaySelectedObject = !displaySelectedObject;
-		break;
-	case 'a':
-	case 'A':
-		break;
-	case 'z':
-	case 'Z':
-		// Decrease Mesh Density
-		break;
-	case 'm':
-	case 'M':
-		// Calculate Moments
-		break;
-	case 'k':
-	case 'K':
-		break;
-	case 'l':
-	case 'L':
-		break;
-	case '{':
-	case '[':
-		// Interactive surface LOD
-		if (glParam->surfVisibilityCutOff > 0)
-			glParam->surfVisibilityCutOff -= 1.0 / (128 * 128 * 36 * 1.0);
-		break;
-	case '}':
-	case ']':
-		// Interactive surface LOD
-		if (glParam->surfVisibilityCutOff < 1)
-			glParam->surfVisibilityCutOff += 1.0 / (128 * 128 * 36 * 1.0);
-		break;
-	case '-':
-	case '_':
-		// Interactive surface LOD
-		if (glParam->surfVisibilityCutOff > 0)
-			glParam->surfVisibilityCutOff -= 0.5;
-		break;
-	case '=':
-	case '+':
-		// Interactive surface LOD
-		if (glParam->surfVisibilityCutOff < 1)
-			glParam->surfVisibilityCutOff += 0.5;
-		break;
-	case ';':
-	case ':':
-		// Interactive surface LOD
-		if (glParam->objVisibilityCutOff > 0)
-			glParam->objVisibilityCutOff -= 1.0 / (128 * 128 * 36 * 1.0);
-		break;
-	case '\'':
-	case '"':
-		// Interactive surface LOD
-		if (glParam->objVisibilityCutOff < 1)
-			glParam->objVisibilityCutOff += 1.0 / (128 * 128 * 36 * 1.0);
-		break;
-	case '9':
-	case '(':
-		// Interactive surface LOD
-		if (glParam->objVisibilityCutOff > 0)
-			glParam->objVisibilityCutOff -= 0.001;
-		break;
-	case '0':
-	case ')':
-		// Interactive surface LOD
-		if (glParam->objVisibilityCutOff < 1)
-			glParam->objVisibilityCutOff += 0.001;
-		break;
-	case 'i':
-	case 'I':
-		if (objects.size() >= 2)
-			TransformObjects(Float2(0, 0), false);
-		break;
-	case 'u':
-	case 'U':
-		break;
-	case 'n':
-	case 'N':
-		// Exact Normals
-		glParam->exactNormals = !glParam->exactNormals;
-		evaluated = false;
-		break;
-	case 'h':
-	case 'H':
-		// Silhouette curve
-	case 'f':
-	case 'F':
-		// Cut thickened lines
-		glParam->drawingON = false;
-		break;
-	case '`':
-	case '~':
-		// Standard views
-		glMatrixMode(GL_MODELVIEW);
-		glGetFloatv(GL_MODELVIEW_MATRIX, viewMatrix); // get the viewMatrix
-		zoomFactor = 1;
-		glLoadIdentity();
-
-		standardView = (standardView + 1) % 3;
-		if (standardView == 1)
-			glRotated(-90, 1, 0, 0);
-		else if (standardView == 2)
-			glRotated(90, 0, 1, 0);
-		glTranslatef(modelPos[0], modelPos[1], modelPos[2]);
-		break;
-	case 'v':
-	case 'V':
-		glParam->drawVoxels = !(glParam->drawVoxels);
-#ifdef DISPLAYLISTS
-		if (glParam->drawVoxels)
-			objects[0]->GenVoxelsDisplayLists(glParam);
-#endif
-		break;
-	case '1':
-	case '!':
-		// Interactive surface Offset
-		if (glParam->offsetDistance > 0)
-			glParam->offsetDistance -= 0.001;
-		break;
-	case '2':
-	case '@':
-		// Interactive surface Offset
-		if (glParam->offsetDistance < 1)
-			glParam->offsetDistance += 0.001;
-		break;
-	case 'd':
-	case 'D':
-		// Dump Screen
-		break;
-	case 'j':
-	case 'J':
-		// Animate Collision
-		if (!animate)
-		{
-			animationStep = 0;
-			animate = true;
-		}
-		else
-		{
-			// StopAnimation();
-			animate = false;
-		}
-		break;
-	case 'r':
-	case 'R':
-		reflectionPlane = (reflectionPlane + 1) % 4;
-		break;
-	case 'p':
-	case 'P':
-		clipping = !clipping;
-		break;
-	case '3':
-	case '#':
-		selectedObject++;
-		numDispPoints++;
-		// clipPlaneDistZ += 0.1;
-		break;
-	case '4':
-	case '$':
-		selectedObject--;
-		numDispPoints--;
-		// clipPlaneDistZ -= 0.1;
-		break;
-	case '5':
-	case '%':
-		clipPlaneDistX += 0.01;
-		break;
-	case '6':
-	case '^':
-		clipPlaneDistX -= 0.01;
-		break;
-	case '7':
-	case '&':
-		glParam->displayLevel++;
-		break;
-	case '8':
-	case '*':
-		glParam->displayLevel--;
-		break;
-	case 't':
-	case 'T':
-		// PerformBooleanOperation();
-		// glParam->voxelCount = 100;
-		for (int i = 0; i < objects.size(); i++)
-			if (objects[i]->voxelData == NULL)
-				objects[i]->PerformVoxelization(glParam, -1);
-		break;
-	default:
-		cerr << "Key " << key << " not supported" << endl;
-	}
-	glutPostRedisplay();
-}
 
 // This functions is called whenever the mouse is pressed or released
 // button is a number 0 to 2 designating the button
@@ -1584,7 +1142,25 @@ int CommandLineArgLength(char *string)
 		;
 	return i;
 }
+static const EGLint configAttribs[] = {
+	EGL_SURFACE_TYPE, EGL_PBUFFER_BIT,
+	EGL_BLUE_SIZE, 8,
+	EGL_GREEN_SIZE, 8,
+	EGL_RED_SIZE, 8,
+	EGL_DEPTH_SIZE, 8,
+	EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT,
+	EGL_NONE};
 
+static const int pbufferWidth = 9;
+static const int pbufferHeight = 9;
+
+static const EGLint pbufferAttribs[] = {
+	EGL_WIDTH,
+	pbufferWidth,
+	EGL_HEIGHT,
+	pbufferHeight,
+	EGL_NONE,
+};
 int main(int argc, char *argv[])
 {
 	// Initialize Variables
@@ -1595,37 +1171,63 @@ int main(int argc, char *argv[])
 	cleared = true;
 	animate = false;
 
+	// 1. Initialize EGL
+	EGLDisplay eglDpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+
+	EGLint major, minor;
+
+	eglInitialize(eglDpy, &major, &minor);
+
+	// 2. Select an appropriate configuration
+	EGLint numConfigs;
+	EGLConfig eglCfg;
+
+	eglChooseConfig(eglDpy, configAttribs, &eglCfg, 1, &numConfigs);
+
+	// 3. Create a surface
+	EGLSurface eglSurf = eglCreatePbufferSurface(eglDpy, eglCfg,
+												 pbufferAttribs);
+
+	// 4. Bind the API
+	eglBindAPI(EGL_OPENGL_API);
+
+	// 5. Create a context and make it current
+	EGLContext eglCtx = eglCreateContext(eglDpy, eglCfg, EGL_NO_CONTEXT,
+										 NULL);
+
+	eglMakeCurrent(eglDpy, eglSurf, eglSurf, eglCtx);
+
 	// Initialize GLUT
-	glutInit(&argc, argv);
-// #ifdef MSAA
-// 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_ALPHA | GLUT_STENCIL | GLUT_MULTISAMPLE);
-// 	glutSetOption(GLUT_MULTISAMPLE, 8);
-// #else
-// 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_ALPHA | GLUT_STENCIL);
-// #endif
+	// glutInit(&argc, argv);
+	// #ifdef MSAA
+	// 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_ALPHA | GLUT_STENCIL | GLUT_MULTISAMPLE);
+	// 	glutSetOption(GLUT_MULTISAMPLE, 8);
+	// #else
+	// 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_ALPHA | GLUT_STENCIL);
+	// #endif
 
 	// glutInitWindowSize(viewport.w, viewport.h);
 	// // glutInitWindowPosition(stoi(argv[1]),stoi(argv[2]));
 	// glutInitWindowPosition(250, 250);
 
-	glutCreateWindow(argv[0]);
+	// glutCreateWindow(argv[0]);
 
-// 	glutDisplayFunc(Display);
-// 	glutIdleFunc(Idle);
-// 	glutReshapeFunc(ReSize);
-// 	glutMouseFunc(MouseClick);
-// 	glutMotionFunc(MouseMove);
-// 	glutKeyboardFunc(KeyPress);
-// 	glutSpecialFunc(SpecialKeys);
-// 	atexit(&CloseWindow);
-// #ifdef USEFREEGLUT
-// 	glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_CONTINUE_EXECUTION);
-// #endif
+	// 	glutDisplayFunc(Display);
+	// 	glutIdleFunc(Idle);
+	// 	glutReshapeFunc(ReSize);
+	// 	glutMouseFunc(MouseClick);
+	// 	glutMotionFunc(MouseMove);
+	// 	glutKeyboardFunc(KeyPress);
+	// 	glutSpecialFunc(SpecialKeys);
+	// 	atexit(&CloseWindow);
+	// #ifdef USEFREEGLUT
+	// 	glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_CONTINUE_EXECUTION);
+	// #endif
 
 	InitGLEW();
 
 	// Parse lighting file
-	//ParseInputFile("default.scene");
+	// ParseInputFile("default.scene");
 
 	if (argv[1] == NULL)
 		cout << "File not specified!" << endl;
@@ -1633,7 +1235,7 @@ int main(int argc, char *argv[])
 	{
 		if (argv[i] != NULL)
 		{
-			std::size_t fileIndex=i;
+			std::size_t fileIndex = i;
 			char *currentArg = argv[i++];
 			double deltaX, deltaY, deltaZ;
 			if (argv[i++] == std::string("deltaX"))
@@ -1641,30 +1243,33 @@ int main(int argc, char *argv[])
 				char *deltaXArg = argv[i++];
 				deltaX = atof(deltaXArg);
 			}
-			else{
-				std::cerr<<"please specify delta x.\n";
+			else
+			{
+				std::cerr << "please specify delta x.\n";
 			}
 			if (argv[i++] == std::string("deltaY"))
 			{
 				char *deltaYArg = argv[i++];
 				deltaY = atof(deltaYArg);
 			}
-			else{
-				std::cerr<<"please specify delta y.\n";
+			else
+			{
+				std::cerr << "please specify delta y.\n";
 			}
 			if (argv[i++] == std::string("deltaZ"))
 			{
 				char *deltaZArg = argv[i];
 				deltaZ = atof(deltaZArg);
 			}
-			else{
-				std::cerr<<"please specify delta z.\n";
+			else
+			{
+				std::cerr << "please specify delta z.\n";
 			}
 			int argLen = CommandLineArgLength(currentArg);
 			char *fileType[3];
 			strncpy((char *)fileType, (const char *)(currentArg + argLen - 3), sizeof("off"));
 			if (strcmp((const char *)fileType, "OBJ") == 0 || strcmp((const char *)fileType, "obj") == 0)
-				ReadOBJFile(argv[fileIndex], i/4 + 2,deltaX,deltaY,deltaZ);
+				ReadOBJFile(argv[fileIndex], i / 4 + 2, deltaX, deltaY, deltaZ);
 			// else if (strcmp((const char *)fileType, "OFF") == 0 || strcmp((const char *)fileType, "off") == 0)
 			// 	ReadOFFFile(argv[i], i + 1);
 			// else if (strcmp((const char *)fileType, "RAW") == 0 || strcmp((const char *)fileType, "raw") == 0)
@@ -1677,16 +1282,19 @@ int main(int argc, char *argv[])
 	CreateFlatTriangleData();
 
 	// Initialize GL and Display Lists
-	//InitGL();
+	// InitGL();
 
 	// Initialize CUDA
 #ifdef USECUDA
 	InitializeCUDA();
 #endif
-		// PerformBooleanOperation();
-		// glParam->voxelCount = 100;
-		for (int i = 0; i < objects.size(); i++)
-			if (objects[i]->voxelData == NULL)
-				objects[i]->PerformVoxelization(glParam, -1);
-	//glutMainLoop();
+	// PerformBooleanOperation();
+	// glParam->voxelCount = 100;
+	for (int i = 0; i < objects.size(); i++)
+		if (objects[i]->voxelData == NULL)
+			objects[i]->PerformVoxelization(glParam, -1);
+	// glutMainLoop();
+
+	// 6. Terminate EGL when finished
+	eglTerminate(eglDpy);
 }

@@ -58,8 +58,19 @@ set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}")
 # Find necessary libraries
 find_package(GLEW REQUIRED)
 find_package(GLUT REQUIRED)
-find_package(OpenGL REQUIRED)
+find_package(OpenGL REQUIRED COMPONENTS OpenGL EGL GLX)
 find_package(CUDA REQUIRED)
+
+message("OpenGL include dirs" )
+message("${OPENGL_INCLUDE_DIR}")
+message("EGL include dirs" )
+message("${OPENGL_EGL_INCLUDE_DIRS}")
+
+if (OpenGL_EGL_FOUND)
+    message("EGL Found!")
+else()
+    message("EGL Not Found!")
+endif()
 
 find_package(VTK 9.1
   CONFIG REQUIRED
@@ -75,7 +86,7 @@ find_package(VTK 9.1
   FiltersSources)
 
 # Add include directories of these libraries to the project
-include_directories(${GLEW_INCLUDE_DIRS} ${GLUT_INCLUDE_DIR} ${OPENGL_INCLUDE_DIR})
+include_directories(${GLEW_INCLUDE_DIRS} ${GLUT_INCLUDE_DIR} ${OPENGL_INCLUDE_DIR} ${OPENGL_EGL_INCLUDE_DIRS})
 
 # GPView project files
 set(GPVIEW_SOURCE_FILES
@@ -107,7 +118,7 @@ set(CUDA_SOURCE_FILES
 )
 
 # List of libraries to be linked
-set(GPVIEW_LIBRARIES ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES} ${GLUT_LIBRARIES})
+set(GPVIEW_LIBRARIES ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES} ${GLUT_LIBRARIES} OpenGL::EGL)
 
 # It becomes easier to debug in this way
 if(CUDA_FOUND)
