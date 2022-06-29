@@ -27,12 +27,12 @@
 #include "../includes/GPUUtilities.h"
 #include "../includes/Utilities.h"
 #include <string>
-#include <vtkImageData.h>
-#include <vtkSmartPointer.h>
-#include <vtkNew.h>
-#include <vtkPointData.h>
-#include <vtkDataArray.h>
-#include <vtkXMLImageDataWriter.h>
+// #include <vtkImageData.h>
+// #include <vtkSmartPointer.h>
+// #include <vtkNew.h>
+// #include <vtkPointData.h>
+// #include <vtkDataArray.h>
+// #include <vtkXMLImageDataWriter.h>
 
 // constructor
 Object::Object()
@@ -3063,70 +3063,70 @@ void Object::SaveVoxelization(GLParameters *glParam)
 	// level1NormalFile.close();
 }
 
-void Object::SaveVoxelizationVTK()
-{
-	float inOutScale = 127.0;
-	vtkSmartPointer<vtkImageData> level1InOut = vtkSmartPointer<vtkImageData>::New();
-	vtkSmartPointer<vtkImageData> level2InOutSub = vtkSmartPointer<vtkImageData>::New();
-	int vtkDataType = VTK_DOUBLE;
+// void Object::SaveVoxelizationVTK()
+// {
+// 	float inOutScale = 127.0;
+// 	vtkSmartPointer<vtkImageData> level1InOut = vtkSmartPointer<vtkImageData>::New();
+// 	vtkSmartPointer<vtkImageData> level2InOutSub = vtkSmartPointer<vtkImageData>::New();
+// 	int vtkDataType = VTK_DOUBLE;
 
-	int numDivX = this->voxelData->numDivX + 1;
-	int numDivY = this->voxelData->numDivY + 1;
-	int numDivZ = this->voxelData->numDivZ + 1;
-	int numComponent = numDivX * numDivY * numDivZ;
-	level1InOut->SetExtent(0, numDivX - 1, 0, numDivY - 1, 0, numDivZ - 1);
-	level1InOut->AllocateScalars(vtkDataType, 1);
-	level1InOut->SetSpacing(this->voxelData->gridSizeX, this->voxelData->gridSizeY, this->voxelData->gridSizeZ);
-	level1InOut->SetOrigin(this->bBoxMin[0], this->bBoxMin[1], this->bBoxMin[2]);
-	vtkDataArray *newScalars = level1InOut->GetPointData()->GetScalars();
-	// for (int z = 0; z < numDivZ; z++)
-	// {
-	// 	for (int y = 0; y < numDivY; y++)
-	// 	{
-	// 		for (int x = 0; x < numDivX; x++)
-	// 		{
-	// 			double *pixel =static_cast<double *>(level1InOut->GetScalarPointer(x, y, z));
-	// 			std::size_t index = z * numDivX * numDivY + y * numDivX + x;
-	// 			if(x)
-	// 			pixel[0] = this->voxelData->level1InOut[index] * inOutScale;
-	// 		}
-	// 	}
-	// }
-	for (std::size_t index = 0; index < numComponent; ++index)
-	{
-		newScalars->SetComponent(index, 0, this->voxelData->level1InOut[index] * inOutScale);
-	}
-	vtkSmartPointer<vtkXMLImageDataWriter> writer = vtkSmartPointer<vtkXMLImageDataWriter>::New();
-	writer->SetFileName("level1InOut.vti");
-	writer->SetInputData(level1InOut);
-	writer->Write();
+// 	int numDivX = this->voxelData->numDivX + 1;
+// 	int numDivY = this->voxelData->numDivY + 1;
+// 	int numDivZ = this->voxelData->numDivZ + 1;
+// 	int numComponent = numDivX * numDivY * numDivZ;
+// 	level1InOut->SetExtent(0, numDivX - 1, 0, numDivY - 1, 0, numDivZ - 1);
+// 	level1InOut->AllocateScalars(vtkDataType, 1);
+// 	level1InOut->SetSpacing(this->voxelData->gridSizeX, this->voxelData->gridSizeY, this->voxelData->gridSizeZ);
+// 	level1InOut->SetOrigin(this->bBoxMin[0], this->bBoxMin[1], this->bBoxMin[2]);
+// 	vtkDataArray *newScalars = level1InOut->GetPointData()->GetScalars();
+// 	// for (int z = 0; z < numDivZ; z++)
+// 	// {
+// 	// 	for (int y = 0; y < numDivY; y++)
+// 	// 	{
+// 	// 		for (int x = 0; x < numDivX; x++)
+// 	// 		{
+// 	// 			double *pixel =static_cast<double *>(level1InOut->GetScalarPointer(x, y, z));
+// 	// 			std::size_t index = z * numDivX * numDivY + y * numDivX + x;
+// 	// 			if(x)
+// 	// 			pixel[0] = this->voxelData->level1InOut[index] * inOutScale;
+// 	// 		}
+// 	// 	}
+// 	// }
+// 	for (std::size_t index = 0; index < numComponent; ++index)
+// 	{
+// 		newScalars->SetComponent(index, 0, this->voxelData->level1InOut[index] * inOutScale);
+// 	}
+// 	vtkSmartPointer<vtkXMLImageDataWriter> writer = vtkSmartPointer<vtkXMLImageDataWriter>::New();
+// 	writer->SetFileName("level1InOut.vti");
+// 	writer->SetInputData(level1InOut);
+// 	writer->Write();
 
-	int numDivX2 = this->voxelData->numDivX2;
-	int numDivY2 = this->voxelData->numDivY2;
-	int numDivZ2 = this->voxelData->numDivZ2;
-	int numLevel2Voxel = numDivX2 * numDivY2 * numDivZ2;
-	int numLevel1BoundaryVoxels = this->voxelData->boundaryIndex.size();
-	const std::vector<int> &boundaryIndex = this->voxelData->boundaryIndex;
-	level2InOutSub->SetExtent(0, numDivX2 - 1, 0, numDivY2 - 1, 0, numDivZ2 - 1);
-	level2InOutSub->AllocateScalars(vtkDataType, 1);
-	level2InOutSub->SetSpacing(this->voxelData->gridSizeX2, this->voxelData->gridSizeY2, this->voxelData->gridSizeZ2);
-	vtkDataArray *newScalarsLevel2 = level2InOutSub->GetPointData()->GetScalars();
-	for (std::size_t boundaryVoxelIndex = 0; boundaryVoxelIndex < numLevel1BoundaryVoxels; ++boundaryVoxelIndex)
-	{
-		auto level1Index = boundaryIndex[boundaryVoxelIndex];
-		Float3 subVoxelOrigin = this->voxelData->bBox[level1Index].midPoint - this->voxelData->bBox[level1Index].halfSize;
-		level2InOutSub->SetOrigin(subVoxelOrigin[0], subVoxelOrigin[1], subVoxelOrigin[2]);
-		for (std::size_t i = 0; i < numLevel2Voxel; ++i)
-		{
-			int index = boundaryVoxelIndex * numLevel2Voxel + i;
-			newScalarsLevel2->SetComponent(i, 0, this->voxelData->level2InOut[index] * inOutScale);
-		}
-		std::string fileName = "level2InOut" + std::to_string(boundaryVoxelIndex) + ".vti";
-		writer->SetFileName(fileName.c_str());
-		writer->SetInputData(level2InOutSub);
-		writer->Write();
-	}
-}
+// 	int numDivX2 = this->voxelData->numDivX2;
+// 	int numDivY2 = this->voxelData->numDivY2;
+// 	int numDivZ2 = this->voxelData->numDivZ2;
+// 	int numLevel2Voxel = numDivX2 * numDivY2 * numDivZ2;
+// 	int numLevel1BoundaryVoxels = this->voxelData->boundaryIndex.size();
+// 	const std::vector<int> &boundaryIndex = this->voxelData->boundaryIndex;
+// 	level2InOutSub->SetExtent(0, numDivX2 - 1, 0, numDivY2 - 1, 0, numDivZ2 - 1);
+// 	level2InOutSub->AllocateScalars(vtkDataType, 1);
+// 	level2InOutSub->SetSpacing(this->voxelData->gridSizeX2, this->voxelData->gridSizeY2, this->voxelData->gridSizeZ2);
+// 	vtkDataArray *newScalarsLevel2 = level2InOutSub->GetPointData()->GetScalars();
+// 	for (std::size_t boundaryVoxelIndex = 0; boundaryVoxelIndex < numLevel1BoundaryVoxels; ++boundaryVoxelIndex)
+// 	{
+// 		auto level1Index = boundaryIndex[boundaryVoxelIndex];
+// 		Float3 subVoxelOrigin = this->voxelData->bBox[level1Index].midPoint - this->voxelData->bBox[level1Index].halfSize;
+// 		level2InOutSub->SetOrigin(subVoxelOrigin[0], subVoxelOrigin[1], subVoxelOrigin[2]);
+// 		for (std::size_t i = 0; i < numLevel2Voxel; ++i)
+// 		{
+// 			int index = boundaryVoxelIndex * numLevel2Voxel + i;
+// 			newScalarsLevel2->SetComponent(i, 0, this->voxelData->level2InOut[index] * inOutScale);
+// 		}
+// 		std::string fileName = "level2InOut" + std::to_string(boundaryVoxelIndex) + ".vti";
+// 		writer->SetFileName(fileName.c_str());
+// 		writer->SetInputData(level2InOutSub);
+// 		writer->Write();
+// 	}
+// }
 void Object::PerformVoxelization(GLParameters *glParam, int bufferSize)
 {
 	bool timing = true;
@@ -3437,7 +3437,7 @@ void Object::PerformVoxelization(GLParameters *glParam, int bufferSize)
 	if (glParam->saveVoxels)
 	{
 		this->SaveVoxelization(glParam);
-		this->SaveVoxelizationVTK();
+		//this->SaveVoxelizationVTK();
 	}
 
 	if (timing)

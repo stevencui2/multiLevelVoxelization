@@ -72,18 +72,18 @@ else()
     message("EGL Not Found!")
 endif()
 
-find_package(VTK 9.1
-  CONFIG REQUIRED
-  CommonColor
-  COMPONENTS
-  CommonCore
-  RenderingOpenGL2
-  IOXML
-  IOGeometry
-  InteractionStyle
-  ImagingHybrid
-  FiltersModeling
-  FiltersSources)
+# find_package(VTK 9.1
+#   CONFIG REQUIRED
+#   CommonColor
+#   COMPONENTS
+#   CommonCore
+#   RenderingOpenGL2
+#   IOXML
+#   IOGeometry
+#   InteractionStyle
+#   ImagingHybrid
+#   FiltersModeling
+#   FiltersSources)
 
 # Add include directories of these libraries to the project
 include_directories(${GLEW_INCLUDE_DIRS} ${GLUT_INCLUDE_DIR} ${OPENGL_INCLUDE_DIR} ${OPENGL_EGL_INCLUDE_DIRS})
@@ -150,9 +150,9 @@ endif()
 # Create the main executable, GPView
 add_executable(GPView ${GPVIEW_SOURCE_FILES})
 
-target_link_libraries(GPView ${VTK_LIBRARIES})
+#target_link_libraries(GPView ${VTK_LIBRARIES})
 
-vtk_module_autoinit(TARGETS GPView MODULES ${VTK_LIBRARIES})
+#vtk_module_autoinit(TARGETS GPView MODULES ${VTK_LIBRARIES})
 
 # Link with the main executable
 if(NOT WIN32)
