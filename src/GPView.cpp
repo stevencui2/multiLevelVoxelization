@@ -21,11 +21,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
+#define EGL_EGLEXT_PROTOTYPES
 #include "../includes/Object.h"
 #include "../includes/GPUUtilities.h"
 #include "../includes/CUDAUtilities.h"
 #include <EGL/egl.h>
+#include <EGL/eglext.h>
 // Resolution
 int intRes = 64;
 int silRes = 300;
@@ -933,7 +934,6 @@ void SilhoetteOrbitControl(Float2 disp)
 	EvaluateSilhouette();
 }
 
-
 // This functions is called whenever the mouse is pressed or released
 // button is a number 0 to 2 designating the button
 // state is 1 for release 0 for press event
@@ -1163,20 +1163,31 @@ static const EGLint pbufferAttribs[] = {
 };
 int main(int argc, char *argv[])
 {
-	// Initialize Variables
-	viewport.w = 1280;
-	viewport.h = 800;
-	glParam = new GLParameters();
-	evaluated = false;
-	cleared = true;
-	animate = false;
+	static const int MAX_DEVICES = 4;
+	EGLDeviceEXT eglDevs[MAX_DEVICES];
+	EGLint numDevices;
 
-	// 1. Initialize EGL
-	EGLDisplay eglDpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+	PFNEGLQUERYDEVICESEXTPROC eglQueryDevicesEXT =
+		(PFNEGLQUERYDEVICESEXTPROC)
+			eglGetProcAddress("eglQueryDevicesEXT");
+
+	eglQueryDevicesEXT(MAX_DEVICES, eglDevs, &numDevices);
+
+	printf("Detected % d devices\n", numDevices);
+
+	PFNEGLGETPLATFORMDISPLAYEXTPROC eglGetPlatformDisplayEXT =
+		(PFNEGLGETPLATFORMDISPLAYEXTPROC)
+			eglGetProcAddress("eglGetPlatformDisplayEXT");
+
+	EGLDisplay eglDpy = eglGetPlatformDisplayEXT(EGL_PLATFORM_DEVICE_EXT,
+												 eglDevs[0], 0);
 
 	EGLint major, minor;
 
 	eglInitialize(eglDpy, &major, &minor);
+
+	// Initialize Variables
+	glParam = new GLParameters();
 
 	// 2. Select an appropriate configuration
 	EGLint numConfigs;
@@ -1197,37 +1208,7 @@ int main(int argc, char *argv[])
 
 	eglMakeCurrent(eglDpy, eglSurf, eglSurf, eglCtx);
 
-	// Initialize GLUT
-	// glutInit(&argc, argv);
-	// #ifdef MSAA
-	// 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_ALPHA | GLUT_STENCIL | GLUT_MULTISAMPLE);
-	// 	glutSetOption(GLUT_MULTISAMPLE, 8);
-	// #else
-	// 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_ALPHA | GLUT_STENCIL);
-	// #endif
-
-	// glutInitWindowSize(viewport.w, viewport.h);
-	// // glutInitWindowPosition(stoi(argv[1]),stoi(argv[2]));
-	// glutInitWindowPosition(250, 250);
-
-	// glutCreateWindow(argv[0]);
-
-	// 	glutDisplayFunc(Display);
-	// 	glutIdleFunc(Idle);
-	// 	glutReshapeFunc(ReSize);
-	// 	glutMouseFunc(MouseClick);
-	// 	glutMotionFunc(MouseMove);
-	// 	glutKeyboardFunc(KeyPress);
-	// 	glutSpecialFunc(SpecialKeys);
-	// 	atexit(&CloseWindow);
-	// #ifdef USEFREEGLUT
-	// 	glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_CONTINUE_EXECUTION);
-	// #endif
-
 	InitGLEW();
-
-	// Parse lighting file
-	// ParseInputFile("default.scene");
 
 	if (argv[1] == NULL)
 		cout << "File not specified!" << endl;
@@ -1281,9 +1262,6 @@ int main(int argc, char *argv[])
 	// Create Flat Triangle Data Structure
 	CreateFlatTriangleData();
 
-	// Initialize GL and Display Lists
-	// InitGL();
-
 	// Initialize CUDA
 #ifdef USECUDA
 	InitializeCUDA();
@@ -1293,7 +1271,6 @@ int main(int argc, char *argv[])
 	for (int i = 0; i < objects.size(); i++)
 		if (objects[i]->voxelData == NULL)
 			objects[i]->PerformVoxelization(glParam, -1);
-	// glutMainLoop();
 
 	// 6. Terminate EGL when finished
 	eglTerminate(eglDpy);
