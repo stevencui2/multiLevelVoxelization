@@ -27,6 +27,8 @@
 #include "../includes/CUDAUtilities.h"
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
+#include "CFDRT/brain/memory/memory.h"
+//include <TDMA.h>
 // Resolution
 int intRes = 64;
 int silRes = 300;
