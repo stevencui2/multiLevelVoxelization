@@ -158,4 +158,5 @@ $RECYCLE.BIN/
 voxel_visualisation.m
 *.off
 *.SAT
+*.vti
 ModelNet/Intersecting_surface.blend
