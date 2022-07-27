@@ -27,7 +27,6 @@
 #include "../includes/CUDAUtilities.h"
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
-#include "CFDRT/brain/memory/memory.h"
 
 float modelSize = 3;
 Float3 modelPos = Float3(0, 0, 0);

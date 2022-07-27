@@ -60,7 +60,6 @@ find_package(GLEW REQUIRED)
 find_package(GLUT REQUIRED)
 find_package(OpenGL REQUIRED COMPONENTS OpenGL EGL GLX)
 find_package(CUDA REQUIRED)
-find_package(CFDRTLib REQUIRED)
 
 message(STATUS "OpenGL include dirs" )
 message(STATUS "${OPENGL_INCLUDE_DIR}")
@@ -73,27 +72,10 @@ else()
     message(STATUS "EGL Not Found!")
 endif()
 
-if (CFDRTLib_FOUND)
-    message(STATUS "CFDRTLib found")
-else()
-    message(STATUS "CFDRTLib not found")
-endif()
 
-# find_package(VTK 9.1
-#   CONFIG REQUIRED
-#   CommonColor
-#   COMPONENTS
-#   CommonCore
-#   RenderingOpenGL2
-#   IOXML
-#   IOGeometry
-#   InteractionStyle
-#   ImagingHybrid
-#   FiltersModeling
-#   FiltersSources)
 
 # Add include directories of these libraries to the project
-include_directories(${GLEW_INCLUDE_DIRS} ${GLUT_INCLUDE_DIR} ${OPENGL_INCLUDE_DIR} ${OPENGL_EGL_INCLUDE_DIRS} ${CFDRTLib_INCLUDE_DIR})
+include_directories(${GLEW_INCLUDE_DIRS} ${GLUT_INCLUDE_DIR} ${OPENGL_INCLUDE_DIR} ${OPENGL_EGL_INCLUDE_DIRS})
 
 
 # GPView project files
@@ -166,7 +148,7 @@ add_executable(GPView ${GPVIEW_SOURCE_FILES})
 if(NOT WIN32)
   set(GPVIEW_LIBRARIES ${GPVIEW_LIBRARIES} "stdc++")
 endif()
-target_link_libraries(GPView ${GPVIEW_LIBRARIES} CFDRTLib)
+target_link_libraries(GPView ${GPVIEW_LIBRARIES} )
 
 # Add debug suffix
 set_target_properties(GPView PROPERTIES DEBUG_POSTFIX "d")
